@@ -153,13 +153,19 @@ func ApplyCheck(p *model.Pool, results map[string]checker.Result) (ok, degraded,
 	return ok, degraded, failed
 }
 
-// Publishable 返回可发布节点（NEW/AVAILABLE/DEGRADED）。
+// Publishable 返回可发布节点（任务书第十五章排序规则的准入线）：
+// AVAILABLE / DEGRADED / 从未失败的 NEW。
+// 检测失败过的新节点仍留在池内观察（可复活），但不发布给客户端。
 func Publishable(p *model.Pool) []*model.Node {
 	out := []*model.Node{}
 	for _, n := range p.Nodes {
 		switch n.State {
-		case model.StateNew, model.StateAvailable, model.StateDegraded:
+		case model.StateAvailable, model.StateDegraded:
 			out = append(out, n)
+		case model.StateNew:
+			if n.FailCount == 0 {
+				out = append(out, n)
+			}
 		}
 	}
 	return out

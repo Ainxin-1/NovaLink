@@ -122,35 +122,36 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	search := strings.ToLower(r.URL.Query().Get("search"))
 	stateFilter := r.URL.Query().Get("state")
+	// 默认视图隐藏失效节点（三连败 FAILED / 检测失败过的新节点），
+	// 显式选择状态或 with-failed 时才展示。
+	hideFailed := stateFilter == "" || stateFilter == "all"
 
 	a.mu.Lock()
 	overlay := a.overlay
 	a.mu.Unlock()
 
-	type row struct {
-		ID       string `json:"id"`
-		Name     string `json:"name"`
-		Protocol string `json:"protocol"`
-		Server   string `json:"server"`
-		Port     int    `json:"port"`
-		State    string `json:"state"`
-		Latency  int    `json:"latency_ms"`
-		Reach    string `json:"reach"` // yes / no / unknown（客户端设备端视角）
-		Sources  int    `json:"sources"`
-		Online   bool   `json:"online"`
-	}
-	rows := []row{}
+	rows := []nodeRow{}
 	counts := map[string]int{}
 	for _, n := range pool.Nodes {
 		counts[n.State]++
 		if n.State == model.StateRemoved || n.State == model.StateExpired {
 			continue
 		}
-		if stateFilter != "" && stateFilter != "all" && n.State != stateFilter {
+		if hideFailed {
+			if n.State == model.StateFailed {
+				continue
+			}
+			if n.State == model.StateNew && n.FailCount > 0 {
+				continue
+			}
+		} else if stateFilter != "with-failed" && n.State != stateFilter {
+			continue
+		} else if stateFilter == "with-failed" && n.State == model.StateRemoved {
 			continue
 		}
-		r1 := row{ID: n.ID, Name: n.Name, Protocol: n.Protocol, Server: n.Server,
-			Port: n.Port, State: n.State, Latency: n.LatencyMS, Sources: len(n.Sources)}
+		r1 := nodeRow{ID: n.ID, Name: n.Name, Protocol: n.Protocol, Server: n.Server,
+			Port: n.Port, State: n.State, Latency: n.LatencyMS, Sources: len(n.Sources),
+			FailCount: n.FailCount}
 		if e, ok := overlay[n.ID]; ok {
 			if e.OK {
 				r1.Reach, r1.Online = "yes", true
@@ -174,18 +175,22 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func nodeLess(a, b struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Protocol string `json:"protocol"`
-	Server   string `json:"server"`
-	Port     int    `json:"port"`
-	State    string `json:"state"`
-	Latency  int    `json:"latency_ms"`
-	Reach    string `json:"reach"`
-	Sources  int    `json:"sources"`
-	Online   bool   `json:"online"`
-}) bool {
+// nodeRow 是节点列表接口的行结构。
+type nodeRow struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Protocol  string `json:"protocol"`
+	Server    string `json:"server"`
+	Port      int    `json:"port"`
+	State     string `json:"state"`
+	Latency   int    `json:"latency_ms"`
+	Reach     string `json:"reach"`
+	Sources   int    `json:"sources"`
+	Online    bool   `json:"online"`
+	FailCount int    `json:"fail_count"`
+}
+
+func nodeLess(a, b nodeRow) bool {
 	if ra, rb := reachRank(a.Reach, a.State), reachRank(b.Reach, b.State); ra != rb {
 		return ra < rb
 	}

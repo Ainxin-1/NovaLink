@@ -84,11 +84,12 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
       <div class="row">
         <input id="search" placeholder="搜索名称或地址">
         <select id="state-filter">
-          <option value="all">全部状态</option>
+          <option value="all">可用与候选</option>
           <option value="AVAILABLE">可用</option>
           <option value="NEW">新节点</option>
           <option value="DEGRADED">较差</option>
-          <option value="FAILED">失败</option>
+          <option value="FAILED">失效</option>
+          <option value="with-failed">含失效节点</option>
         </select>
       </div>
       <div class="row">
