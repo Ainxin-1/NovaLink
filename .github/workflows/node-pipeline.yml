@@ -1,0 +1,56 @@
+name: node-pipeline
+
+# NovaLink Node Pipeline 定时更新（任务书第三十一章：主通道 GitHub 自动发布）
+# 发布产物（data/published/ 与 data/pool.json）提交回仓库后，
+# 可通过 jsDelivr 镜像访问：cdn.jsdelivr.net/gh/<owner>/<repo>@main/data/published/<file>
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # 每 2 小时一次（免费节点时效性强）
+  workflow_dispatch: {}      # 支持手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: 构建 novanode
+        working-directory: node
+        run: go build -o ../novanode .
+
+      - name: 下载 sing-box（深度检测用）
+        run: |
+          curl -sL -o sb.tar.gz https://github.com/SagerNet/sing-box/releases/download/v1.14.0/sing-box-1.14.0-linux-amd64.tar.gz
+          tar xzf sb.tar.gz
+          mv sing-box-1.14.0-linux-amd64/sing-box ./sing-box
+          chmod +x ./sing-box
+
+      - name: 运行节点管线（获取→解析→去重→协议级深度检测→发布）
+        env:
+          SINGBOX: ${{ github.workspace }}/sing-box
+        run: |
+          ./novanode fetch -dir data
+          # 覆盖 pipeline.json 中的核心路径（本地默认路径在 CI 不存在）
+          python3 - <<'EOF' 2>/dev/null || sed -i 's|"singbox_path": "[^"]*"|"singbox_path": "./sing-box"|' data/pipeline.json
+          import json,pathlib
+          p=pathlib.Path("data/pipeline.json");c=json.loads(p.read_text())
+          c["singbox_path"]="./sing-box";p.write_text(json.dumps(c,indent=2))
+          EOF
+          ./novanode check -dir data
+
+      - name: 提交发布产物
+        run: |
+          git config user.name "nova-pipeline-bot"
+          git config user.email "nova-pipeline-bot@users.noreply.github.com"
+          git add data/pool.json data/pipeline.json data/published/ data/sources.json
+          git diff --cached --quiet && echo "无变化" || git commit -m "节点池更新 $(date -u '+%F %T')"
+          git push

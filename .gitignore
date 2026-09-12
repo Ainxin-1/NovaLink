@@ -1,0 +1,19 @@
+# 工具链与二进制
+toolchain/
+node/bin/
+client/bin/
+core/vpn-core/
+*.exe
+*.zip
+*.tar.gz
+
+# 运行数据（CI 中按需 git add -f 提交发布产物）
+node/data/
+client/data/
+verify/
+*.log
+
+# 杂项
+client_debug.log
+client_run.log
+deep_check.log

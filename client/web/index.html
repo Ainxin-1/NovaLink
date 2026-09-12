@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovaLink</title>
+<style>
+:root{--bg:#0f1420;--card:#1a2233;--line:#26324a;--tx:#e8edf7;--sub:#8b98b3;--ok:#3ecf8e;--bad:#ff6b6b;--warn:#ffc94d;--acc:#5b8cff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.6 "Segoe UI",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;letter-spacing:.5px}
+header h1 span{color:var(--acc)}
+nav{margin-left:auto;display:flex;gap:4px}
+nav button{background:none;border:none;color:var(--sub);padding:6px 14px;cursor:pointer;border-radius:6px;font-size:14px}
+nav button.active{background:var(--card);color:var(--tx)}
+main{max-width:860px;margin:0 auto;padding:20px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.big{font-size:26px;font-weight:600;margin:6px 0 2px}
+.sub{color:var(--sub);font-size:13px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.dot.disconnected{background:var(--sub)}.dot.connecting{background:var(--warn);animation:pulse 1s infinite}
+.dot.connected{background:var(--ok)}.dot.failed{background:var(--bad)}
+@keyframes pulse{50%{opacity:.35}}
+.btn{border:none;border-radius:8px;padding:12px 34px;font-size:16px;cursor:pointer;color:#fff}
+.btn.primary{background:var(--acc)}.btn.danger{background:var(--bad)}
+.btn.small{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.err{color:var(--bad);font-size:13px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--sub);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:500}
+td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+input,select{background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:9px 12px;font-size:13px}
+input.wide{width:100%}
+label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#loglist{font:12px/1.8 Consolas,monospace;color:var(--sub);white-space:pre-wrap;word-break:break-all}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--sub)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.no{color:var(--bad);border-color:var(--bad)}
+.tag.AVAILABLE{color:var(--ok)}.tag.FAILED{color:var(--bad)}.tag.DEGRADED{color:var(--warn)}
+.mt{margin-top:16px}.mb{margin-bottom:12px}
+.empty{color:var(--sub);text-align:center;padding:30px 0}
+.kv{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
+.kv div span{display:block;color:var(--sub);font-size:12px}
+.kv div b{font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Nova<span>Link</span></h1>
+  <nav>
+    <button data-p="home" class="active">首页</button>
+    <button data-p="nodes">节点列表</button>
+    <button data-p="settings">设置</button>
+    <button data-p="logs">日志</button>
+  </nav>
+</header>
+<main>
+
+<section id="page-home" class="page active">
+  <div class="card">
+    <div class="big"><span id="phase-dot" class="dot disconnected"></span><span id="phase-text">未连接</span></div>
+    <div class="sub" id="current-node">当前节点：—</div>
+    <div class="sub" id="exit-info"></div>
+    <div class="sub" id="sysproxy-info" style="color:var(--ok)"></div>
+    <div class="kv">
+      <div><span>节点池更新</span><b id="pool-updated">—</b></div>
+      <div><span>可发布节点</span><b id="pool-count">—</b></div>
+    </div>
+    <div class="mt row">
+      <button id="btn-connect" class="btn primary">连接</button>
+      <button id="btn-disconnect" class="btn danger" disabled>断开</button>
+      <span class="sub" id="hint">在节点列表选择节点后连接</span>
+    </div>
+    <div class="err" id="home-err"></div>
+  </div>
+</section>
+
+<section id="page-nodes" class="page">
+  <div class="card">
+    <div class="spread mb">
+      <div class="row">
+        <input id="search" placeholder="搜索名称或地址">
+        <select id="state-filter">
+          <option value="all">全部状态</option>
+          <option value="AVAILABLE">可用</option>
+          <option value="NEW">新节点</option>
+          <option value="DEGRADED">较差</option>
+          <option value="FAILED">失败</option>
+        </select>
+      </div>
+      <div class="row">
+        <button id="btn-check" class="btn small">设备端检测</button>
+        <button id="btn-reload" class="btn small">刷新列表</button>
+      </div>
+    </div>
+    <div class="sub mb" id="nodes-meta"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>节点</th><th>协议</th><th>地址</th><th>延迟</th><th>状态</th><th>本机检测</th><th></th></tr></thead>
+        <tbody id="node-rows"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="page-settings" class="page">
+  <div class="card">
+    <label>核心程序路径（sing-box.exe）</label>
+    <input id="set-sb" class="wide">
+    <label>节点池文件路径</label>
+    <input id="set-pool" class="wide">
+    <label>代理端口（核心本地入站）</label>
+    <input id="set-port" type="number" style="width:140px">
+    <label>界面监听地址（变更后需重启）</label>
+    <input id="set-listen" style="width:260px">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--tx);font-size:13px">
+      <input type="checkbox" id="set-sysproxy" style="width:auto"> 连接成功后自动接管系统代理（断开时恢复原状）
+    </label>
+    <div class="mt"><button id="btn-save" class="btn small primary">保存设置</button>
+      <span class="sub" id="set-msg" style="margin-left:10px"></span></div>
+    <p class="sub mt">说明：节点数据由 Node Pipeline 统一管理；本客户端检测仅作设备端参考，免费节点不保证稳定与安全。</p>
+  </div>
+</section>
+
+<section id="page-logs" class="page">
+  <div class="card"><div class="spread mb"><b>运行日志</b>
+    <button id="btn-logrefresh" class="btn small">刷新</button></div>
+    <div id="loglist" class="empty">暂无日志</div>
+  </div>
+</section>
+
+</main>
+<script>
+let selected=null,$=id=>document.getElementById(id);
+const phaseText={disconnected:"未连接",connecting:"正在连接",connected:"已连接",failed:"连接失败"};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");$("page-"+b.dataset.p).classList.add("active");
+  if(b.dataset.p==="nodes")loadNodes();if(b.dataset.p==="logs")loadLogs();if(b.dataset.p==="settings")loadSettings();
+});
+function tag(t,cls){return `<span class="tag ${cls||""}">${t}</span>`}
+async function poll(){try{const s=await (await fetch("/api/status")).json();
+  $("phase-dot").className="dot "+s.phase;$("phase-text").textContent=phaseText[s.phase]||s.phase;
+  $("current-node").textContent="当前节点："+(s.node&&s.node.id?s.node.name+"（"+s.node.protocol+"，"+s.node.server+":"+s.node.port+"）":"—");
+  $("exit-info").textContent=s.exit_info?("出口："+s.exit_info.replace(/\s+/g," ")):"";
+  $("sysproxy-info").textContent=s.sysproxy?"系统代理已由 NovaLink 接管，浏览器无需其他设置":"";
+  $("home-err").textContent=s.last_error||"";
+  $("btn-connect").disabled=s.phase==="connecting"||s.phase==="connected";
+  $("btn-disconnect").disabled=s.phase==="disconnected";
+  const c=s.check||{};$("btn-check").disabled=c.running;
+  $("btn-check").textContent=c.running?("检测中 "+c.done+"/"+c.total):"设备端检测";
+  if(s.check&&c.running&&document.querySelector("#page-nodes.active"))loadNodesQuiet();
+}catch(e){}}
+setInterval(poll,2000);poll();
+
+$("btn-connect").onclick=async()=>{
+  if(!selected){$("hint").textContent="请先在节点列表选择一个节点";return}
+  $("home-err").textContent="";$("btn-connect").disabled=true;
+  const r=await fetch("/api/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:selected})});
+  if(!r.ok)$("home-err").textContent=(await r.text())||"连接请求失败";
+};
+$("btn-disconnect").onclick=async()=>{await fetch("/api/disconnect",{method:"POST"});poll();};
+$("btn-reload").onclick=()=>loadNodes();
+$("btn-check").onclick=async()=>{const r=await fetch("/api/check",{method:"POST"});if(!r.ok)alert(await r.text());};
+$("btn-logrefresh").onclick=loadLogs;
+$("search").oninput=()=>loadNodes();$("state-filter").onchange=()=>loadNodes();
+async function loadNodesQuiet(){const el=$("node-rows");if(el.dataset.loading)return;el.dataset.loading=1;
+  await loadNodes();delete el.dataset.loading;}
+async function loadNodes(){
+  const q=new URLSearchParams({search:$("search").value,state:$("state-filter").value});
+  const d=await (await fetch("/api/nodes?"+q)).json();
+  $("nodes-meta").textContent=`共 ${d.total} 个节点（池更新 ${d.pool_updated||"—"}）· 可用 ${d.counts.AVAILABLE||0} / 新 ${d.counts.NEW||0} / 较差 ${d.counts.DEGRADED||0} / 失败 ${d.counts.FAILED||0}`;
+  const tb=$("node-rows");
+  if(!d.nodes.length){tb.innerHTML='<tr><td colspan="7" class="empty">没有匹配的节点</td></tr>';return}
+  tb.innerHTML=d.nodes.map(n=>{
+    const reach=n.reach==="yes"?tag("可达 "+n.latency_ms+"ms","ok"):n.reach==="no"?tag("不可达","no"):tag("未检测");
+    const st=tag(n.state,n.state);
+    return `<tr><td title="${esc(n.name)}">${esc(n.name||"(未命名)")}</td><td>${n.protocol}</td><td>${esc(n.server)}:${n.port}</td><td>${n.latency_ms?n.latency_ms+"ms":"—"}</td><td>${st}</td><td>${reach}</td>
+    <td><button class="btn small primary" onclick="pick('${n.id}')" ${n.state==="EXPIRED"||n.state==="REMOVED"?"disabled":""}>${selected===n.id?"已选":"选择"}</button></td></tr>`;
+  }).join("");
+}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+window.pick=id=>{selected=id;$("hint").textContent="已选择节点，回到首页点击连接";
+  document.querySelectorAll("nav button")[0].click();poll();};
+async function loadSettings(){const s=await (await fetch("/api/settings")).json();
+  $("set-sb").value=s.singbox_path;$("set-pool").value=s.pool_path;
+  $("set-port").value=s.proxy_port;$("set-listen").value=s.listen;
+  $("set-sysproxy").checked=!!s.auto_sysproxy;}
+$("btn-save").onclick=async()=>{
+  const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({singbox_path:$("set-sb").value,pool_path:$("set-pool").value,
+      proxy_port:+$("set-port").value,listen:$("set-listen").value,
+      auto_sysproxy:$("set-sysproxy").checked})});
+  $("set-msg").textContent=r.ok?"已保存":("失败: "+await r.text());};
+async function loadLogs(){const d=await (await fetch("/api/log")).json();
+  const el=$("loglist");el.className="";el.textContent=d.lines.join("\n")||"暂无日志";}
+async function fillPoolMeta(){try{const d=await (await fetch("/api/nodes?state=all")).json();
+  $("pool-updated").textContent=(d.pool_updated||"—").slice(0,16).replace("T"," ");
+  $("pool-count").textContent=(d.counts.AVAILABLE||0)+" 可用 / 共 "+d.total;}catch(e){}}
+fillPoolMeta();setInterval(fillPoolMeta,30000);
+</script>
+</body>
+</html>
