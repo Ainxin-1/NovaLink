@@ -281,6 +281,7 @@ func defaultSources() []model.SourceConfig {
 		{Name: "远程-Epodonios-ss(raw)", URL: "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/Splitted-By-Protocol/ss.txt", Type: "auto", Enabled: true, Note: "整文件base64"},
 		{Name: "远程-Epodonios-trojan(raw)", URL: "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/Splitted-By-Protocol/trojan.txt", Type: "auto", Enabled: true, Note: "整文件base64"},
 		{Name: "远程-AutoMerge(raw)", URL: "https://raw.githubusercontent.com/chengaopan/AutoMergePublicNodes/master/list.txt", Type: "auto", Enabled: true, Note: "时通时断，验证来源隔离"},
+		{Name: "索引-lza6目录", URL: "https://raw.githubusercontent.com/lza6/free-VPN/main/README.md", Type: "index", Enabled: true, Note: "免费节点目录源，自动发现订阅地址（借鉴 ghboost）"},
 	}
 }
 

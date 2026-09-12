@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,8 @@ const fetchTimeout = 30 * time.Second
 
 // FetchAll 并发获取所有启用的来源，返回各来源文本。
 // 任何来源失败只记录到对应 SourceResult，不产生全局错误。
+// Type=index 的来源是"目录源"：抓取文本后自动提取其中的订阅 URL，
+// 每个子 URL 作为独立子来源抓取（借鉴 ghboost 的做法）。
 func FetchAll(cfgs []model.SourceConfig) (map[string]string, []model.SourceResult) {
 	var mu sync.Mutex
 	texts := map[string]string{}
@@ -31,6 +34,10 @@ func FetchAll(cfgs []model.SourceConfig) (map[string]string, []model.SourceResul
 		wg.Add(1)
 		go func(cfg model.SourceConfig) {
 			defer wg.Done()
+			if cfg.Type == "index" {
+				fetchIndex(cfg, &mu, texts, &results)
+				return
+			}
 			text, err := fetchOne(cfg.URL)
 			mu.Lock()
 			defer mu.Unlock()
@@ -46,6 +53,73 @@ func FetchAll(cfgs []model.SourceConfig) (map[string]string, []model.SourceResul
 	}
 	wg.Wait()
 	return texts, results
+}
+
+// indexCap 限制单个目录源展开的子来源数量，避免一次抓取失控。
+const indexCap = 40
+
+func fetchIndex(cfg model.SourceConfig, mu *sync.Mutex, texts map[string]string, results *[]model.SourceResult) {
+	text, err := fetchOne(cfg.URL)
+	if err != nil {
+		mu.Lock()
+		*results = append(*results, model.SourceResult{Name: cfg.Name, Error: err.Error(), FetchedAt: now()})
+		mu.Unlock()
+		return
+	}
+	urls := extractSubscriptionURLs(text, indexCap)
+	mu.Lock()
+	*results = append(*results, model.SourceResult{Name: cfg.Name, OK: true, NodeCount: len(urls), FetchedAt: now()})
+	mu.Unlock()
+	if len(urls) == 0 {
+		return
+	}
+	var wg sync.WaitGroup
+	for i, u := range urls {
+		wg.Add(1)
+		go func(i int, u string) {
+			defer wg.Done()
+			t, err := fetchOne(u)
+			name := fmt.Sprintf("%s#%02d", cfg.Name, i+1)
+			mu.Lock()
+			defer mu.Unlock()
+			r := model.SourceResult{Name: name, FetchedAt: now()}
+			if err != nil {
+				r.Error = err.Error()
+			} else {
+				r.OK = true
+				texts[name] = t
+			}
+			*results = append(*results, r)
+		}(i, u)
+	}
+	wg.Wait()
+}
+
+// extractSubscriptionURLs 从目录文本提取疑似订阅地址：
+// 跳过 blob 页面、纯域名首页与明显非订阅链接，去重并限量。
+func extractSubscriptionURLs(text string, cap int) []string {
+	re := regexp.MustCompile(`https?://[^\s)\x60"'<>]+`)
+	seen := map[string]bool{}
+	out := []string{}
+	for _, raw := range re.FindAllString(text, -1) {
+		u := strings.TrimRight(raw, ".,;，。；")
+		if seen[u] {
+			continue
+		}
+		seen[u] = true
+		l := strings.ToLower(u)
+		switch {
+		case strings.Contains(l, "/blob/"), // GitHub 网页页签，非原始文件
+			strings.HasSuffix(l, "/"),        // 目录/首页
+			strings.Count(strings.TrimPrefix(strings.TrimPrefix(l, "https://"), "http://"), "/") < 1: // 纯域名
+			continue
+		}
+		out = append(out, u)
+		if len(out) >= cap {
+			break
+		}
+	}
+	return out
 }
 
 func fetchOne(rawURL string) (string, error) {
