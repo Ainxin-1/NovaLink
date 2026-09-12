@@ -152,6 +152,15 @@ func (m *Manager) supervise(gen int, logf func(string, ...any)) {
 	}
 	m.fail("连续 %d 个节点均连接失败，请稍后重试或刷新节点", failoverMax)
 	logf("自动换节点耗尽候选")
+	// 连接最终失败：必须归还系统代理，否则用户浏览器指向无监听端口
+	m.mu.Lock()
+	sp := m.sysProxy
+	m.sysProxy = false
+	m.mu.Unlock()
+	if sp {
+		RestoreSystemProxy(filepath.Join(m.dataDir, "sysproxy_backup.json"))
+		logf("系统代理已恢复为用户原设置")
+	}
 }
 
 // runOne 启动单个节点并阻塞验证直到：连上（进入健康监控）/失败/用户断开。
