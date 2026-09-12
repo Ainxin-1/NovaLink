@@ -70,6 +70,7 @@ func main() {
 	a.settings = s
 	a.manager = core.NewManager(s, *dir)
 	a.loadOverlay()
+	core.CleanupOrphan(s.ProxyPort, s.SingBoxPath, a.logf)
 	a.logf("NovaLink 客户端启动，界面地址 http://%s", s.Listen)
 
 	mux := http.NewServeMux()

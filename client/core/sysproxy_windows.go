@@ -57,6 +57,25 @@ func regDelete(name string) {
 	_ = exec.Command("reg", "delete", internetSettingsKey, "/v", name, "/f").Run()
 }
 
+// SysProxyEnabled 读取当前系统代理开关状态。
+func SysProxyEnabled() bool {
+	v, ok := regQueryValue("ProxyEnable")
+	return ok && (v == "0x1" || v == "1")
+}
+
+// AssertSystemProxy 不改备份、仅重新确保代理指向 127.0.0.1:port 并开启。
+// 用于自愈：其他程序（如另一个代理客户端）可能把系统代理开关关掉。
+func AssertSystemProxy(port int) error {
+	if err := regSet("ProxyServer", "REG_SZ", fmt.Sprintf("127.0.0.1:%d", port)); err != nil {
+		return err
+	}
+	if err := regSet("ProxyEnable", "REG_DWORD", "0x1"); err != nil {
+		return err
+	}
+	refreshNotify()
+	return nil
+}
+
 // SetSystemProxy 将系统代理指向 127.0.0.1:port，并把用户原设置备份到 backupPath。
 func SetSystemProxy(port int, backupPath string) error {
 	b := proxyBackup{ProxyEnable: "0x0"}

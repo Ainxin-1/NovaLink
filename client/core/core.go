@@ -169,6 +169,7 @@ func (m *Manager) runOne(node *model.Node, logf func(string, ...any)) (string, b
 	cfgPath := filepath.Join(m.dataDir, "core_config.json")
 	ob := publish.Outbound(node)
 	if ob == nil {
+		logf("节点参数不完整，无法生成配置，跳过")
 		m.mu.Lock()
 		m.lastError = "节点参数不完整"
 		m.mu.Unlock()
@@ -187,11 +188,13 @@ func (m *Manager) runOne(node *model.Node, logf func(string, ...any)) (string, b
 		}
 	}
 	if _, err := os.Stat(m.settings.SingBoxPath); err != nil {
+		logf("核心程序不存在: %s", m.settings.SingBoxPath)
 		m.fail("核心程序不存在，请在设置中检查路径")
 		return "", false
 	}
 	if c, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)), 300*time.Millisecond); err == nil {
 		c.Close()
+		logf("代理端口 %d 被占用，跳过该候选", port)
 		m.fail("代理端口 %d 被占用，可能有残留核心进程", port)
 		return "", false
 	}
@@ -296,6 +299,14 @@ func (m *Manager) healthLoop(port int, logf func(string, ...any)) {
 		time.Sleep(healthInterval)
 		if m.currentGen() != gen || m.phaseNow() != PhaseConnected {
 			return
+		}
+		// 自愈：其他代理客户端可能关掉系统代理开关（实测 v2rayN 会）
+		if m.sysProxyOwned() {
+			if !SysProxyEnabled() {
+				if err := AssertSystemProxy(port); err == nil {
+					logf("检测到系统代理被其他程序关闭，已重新接管")
+				}
+			}
 		}
 		resp, err := client.Get(probeHTTP)
 		if err == nil {
@@ -447,6 +458,13 @@ func (m *Manager) currentGen() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.gen
+}
+
+// sysProxyOwned 当前是否由本客户端接管着系统代理。
+func (m *Manager) sysProxyOwned() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.sysProxy
 }
 
 func (m *Manager) phaseNow() string {
