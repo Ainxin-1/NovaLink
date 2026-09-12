@@ -62,26 +62,62 @@ func checkDue(dir string, pool *model.Pool, deep pipelineCfg) map[string]checker
 		case model.StateExpired, model.StateRemoved:
 			continue
 		}
+		// 失效节点已不发布，降频复检（24h），把检测资源留给可用与候选
+		interval := checkInterval
+		if n.State == model.StateFailed {
+			interval = 24 * time.Hour
+		}
 		if n.LastChecked == "" {
 			due = append(due, *n)
 			continue
 		}
-		if t, err := time.Parse(time.RFC3339, n.LastChecked); err == nil && nowT.Sub(t) >= checkInterval {
+		if t, err := time.Parse(time.RFC3339, n.LastChecked); err == nil && nowT.Sub(t) >= interval {
 			due = append(due, *n)
 		}
 	}
 	if len(due) == 0 {
 		return nil
 	}
+	// 两阶段：TCP 快速淘汰（大批量、短超时）-> 协议级深度检测（只测 TCP 活的）
+	t0 := time.Now()
+	tcpResults := checker.TCP(due, 3*time.Second, 256)
+	logf("TCP 快筛: %d 个，存活 %d，耗时 %s",
+		len(due), countOK(tcpResults), time.Since(t0).Round(time.Second))
+	alive := make([]model.Node, 0, len(tcpResults))
+	tcpDead := map[string]bool{}
+	for _, n := range due {
+		if r, ok := tcpResults[n.ID]; ok && !r.OK {
+			tcpDead[n.ID] = true
+			continue
+		}
+		alive = append(alive, n)
+	}
 	if deep.Deep && deep.SingBoxPath != "" {
 		if _, err := os.Stat(deep.SingBoxPath); err == nil {
-			logf("深度检测开始: %d 个节点（协议级真实握手，批 %d 并发 16）", len(due), deep.ChunkSize)
-			return checker.Deep(due, deep.SingBoxPath, deep.BasePort, deep.ChunkSize, logf)
+			logf("深度检测开始: %d 个节点（协议级真实握手，批 %d）", len(alive), deep.ChunkSize)
+			results := checker.Deep(alive, deep.SingBoxPath, deep.BasePort, deep.ChunkSize, logf)
+			for id := range tcpResults { // TCP 已死的直接计失败
+				if tcpDead[id] {
+					if _, covered := results[id]; !covered {
+						results[id] = checker.Result{ID: id, OK: false}
+					}
+				}
+			}
+			return results
 		}
 		logf("深度检测不可用（未找到核心 %s），退回 TCP 粗筛", deep.SingBoxPath)
 	}
-	logf("TCP 粗筛开始: %d 个节点（16 并发）", len(due))
-	return checker.TCP(due, 5*time.Second, 16)
+	return tcpResults
+}
+
+func countOK(m map[string]checker.Result) int {
+	c := 0
+	for _, r := range m {
+		if r.OK {
+			c++
+		}
+	}
+	return c
 }
 
 func main() {

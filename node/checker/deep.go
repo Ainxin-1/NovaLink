@@ -141,7 +141,7 @@ func tryChunk(batch int, chunk []model.Node, singboxPath string, basePort int, w
 
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 16)
+	sem := make(chan struct{}, 48)
 	for _, t := range targets {
 		wg.Add(1)
 		sem <- struct{}{}
