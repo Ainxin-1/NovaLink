@@ -70,7 +70,7 @@ func singboxConfig(nodes []*model.Node) map[string]any {
 	}
 	auto := map[string]any{
 		"type": "urltest", "tag": "auto", "outbounds": tags,
-		"url": "http://www.gstatic.com/generate_204", "interval": "10m",
+		"url": "https://www.gstatic.com/generate_204", "interval": "10m",
 	}
 	direct := map[string]any{"type": "direct", "tag": "direct"}
 	all := append([]any{selector, auto}, outbounds...)

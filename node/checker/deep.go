@@ -20,7 +20,9 @@ import (
 	"novanode/publish"
 )
 
-const probeURL = "http://www.gstatic.com/generate_204"
+// 探测必须用 HTTPS：明文 HTTP 会被大陆出口/伪造节点本地应答欺骗，
+// HTTPS 需要真实完成到目标站的 TLS 握手，伪造不了。
+const probeURL = "https://www.gstatic.com/generate_204"
 
 // Deep 对 nodes 做协议级检测：按 chunkSize 分批，每批生成一个
 // 多入站/多出站的 sing-box 配置（入站 i 固定路由到出站 i），

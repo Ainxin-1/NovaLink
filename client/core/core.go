@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ const (
 const (
 	probeInterval   = 1500 * time.Millisecond
 	probeTimeout    = 25 * time.Second // 单批连接验证上限
-	probeHTTP       = "http://www.gstatic.com/generate_204"
+	probeHTTP       = "https://www.gstatic.com/generate_204" // HTTPS 防伪造应答
 	batchSize       = 8               // 内核 urltest 组的节点数（任务书第十五章：自动选择最快）
 	failoverMax     = 5               // 整批全灭时最多再换 5 批
 	healthInterval  = 20 * time.Second
@@ -353,13 +354,28 @@ func (m *Manager) infoLoop(port int, batch []*model.Node, logf func(string, ...a
 		}
 		if tick%3 == 0 {
 			pc := m.proxyClient(port, 10*time.Second)
-			if r2, err := pc.Get("http://ip-api.com/line/?fields=query,country"); err == nil {
+			if r2, err := pc.Get("http://ip-api.com/line/?fields=query,countryCode"); err == nil {
 				buf := make([]byte, 256)
 				n, _ := r2.Body.Read(buf)
 				r2.Body.Close()
+				parts := strings.SplitN(string(buf[:n]), "\n", 2)
+				code := strings.TrimSpace(parts[0])
 				m.mu.Lock()
-				m.exitInfo = string(buf[:n])
+				m.exitInfo = strings.TrimSpace(string(buf[:n]))
 				m.mu.Unlock()
+				// 大陆出口无法用于访问外网（且可能伪造探测），立即更换
+				if code == "CN" {
+					logf("当前节点为中国大陆出口，不符合产品用途，自动更换节点")
+					m.killProc(logf)
+					m.mu.Lock()
+					m.phase = PhaseConnecting
+					m.batchIdx++
+					m.gen++
+					gen2 := m.gen
+					m.mu.Unlock()
+					go m.supervise(gen2, logf)
+					return
+				}
 			}
 		}
 	}
