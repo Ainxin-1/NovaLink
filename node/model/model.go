@@ -35,6 +35,7 @@ type Node struct {
 	LastSuccess string            `json:"last_success,omitempty"`
 	State       string            `json:"state"`
 	FailCount   int               `json:"fail_count"`
+	SlowCount   int               `json:"slow_count,omitempty"`
 	LatencyMS   int               `json:"latency_ms,omitempty"`
 }
 

@@ -31,16 +31,17 @@ const checkInterval = 6 * time.Hour // 粗筛最小间隔
 
 // pipelineCfg 管线运行参数（data/pipeline.json，缺省自动生成）。
 type pipelineCfg struct {
-	SingBoxPath string `json:"singbox_path"` // 提供则启用协议级深度检测
-	Deep        bool   `json:"deep"`
-	ChunkSize   int    `json:"chunk_size"`
-	BasePort    int    `json:"base_port"`
+	SingBoxPath  string `json:"singbox_path"`  // 提供则启用协议级深度检测
+	Deep         bool   `json:"deep"`
+	ChunkSize    int    `json:"chunk_size"`
+	BasePort     int    `json:"base_port"`
+	MaxLatencyMS int    `json:"max_latency_ms"` // 可用线：超过则降级，连续2轮超线判死
 }
 
 func loadPipeline(dir string) pipelineCfg {
 	def := pipelineCfg{
 		SingBoxPath: "E:/NovaLink/core/vpn-core/sing-box-1.14.0-windows-amd64/sing-box.exe",
-		Deep:        true, ChunkSize: 32, BasePort: 30000,
+		Deep:        true, ChunkSize: 64, BasePort: 30000, MaxLatencyMS: 800,
 	}
 	b, err := os.ReadFile(filepath.Join(dir, "pipeline.json"))
 	if err != nil {
@@ -197,9 +198,10 @@ func runFetch(dir string) error {
 	logf("节点池合并: 新增 %d，池内共 %d", added, len(pool.Nodes))
 
 	// 6. 深度检测/粗筛（仅测到期节点）
-	results2 := checkDue(dir, pool, loadPipeline(dir))
+	deep := loadPipeline(dir)
+	results2 := checkDue(dir, pool, deep)
 	if len(results2) > 0 {
-		a, d, f := cache.ApplyCheck(pool, results2)
+		a, d, f := cache.ApplyCheck(pool, results2, deep.MaxLatencyMS)
 		logf("检测完成: %d 个，可用 %d / 较差 %d / 连续失败 %d", len(results2), a, d, f)
 	}
 
@@ -231,7 +233,7 @@ func runCheck(dir string) error {
 		pool2.Nodes[i].LastChecked = ""
 	}
 	results := checkDue(dir, pool2, loadPipeline(dir))
-	a, d, f := cache.ApplyCheck(pool, results)
+	a, d, f := cache.ApplyCheck(pool, results, loadPipeline(dir).MaxLatencyMS)
 	if err := cache.Save(pool, filepath.Join(dir, "pool.json")); err != nil {
 		return err
 	}

@@ -122,9 +122,15 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	search := strings.ToLower(r.URL.Query().Get("search"))
 	stateFilter := r.URL.Query().Get("state")
-	// 默认视图隐藏失效节点（三连败 FAILED / 检测失败过的新节点），
-	// 显式选择状态或 with-failed 时才展示。
+	// 默认视图隐藏失效节点与超慢节点（>800ms 的 DEGRADED 仅在荒年展示）
 	hideFailed := stateFilter == "" || stateFilter == "all"
+	fastAvailable := 0
+	for _, n := range pool.Nodes {
+		if n.State == model.StateAvailable && n.LatencyMS < 800 {
+			fastAvailable++
+		}
+	}
+	famine := fastAvailable < 3 // 荒年：快节点不足时展示慢节点兜底
 
 	a.mu.Lock()
 	overlay := a.overlay
@@ -142,6 +148,10 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if n.State == model.StateNew && n.FailCount > 0 {
+				continue
+			}
+			// 超慢节点（≥800ms 降级）默认隐藏，荒年（快节点<3）才展示兜底
+			if n.State == model.StateDegraded && !famine {
 				continue
 			}
 		} else if stateFilter != "with-failed" && n.State != stateFilter {

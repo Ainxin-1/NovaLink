@@ -116,8 +116,10 @@ func Age(p *model.Pool, seen map[string]bool) (expired, removed int) {
 	return expired, removed
 }
 
-// ApplyCheck 将粗筛结果写回状态机（任务书第十三章：不因一次失败立即删除）。
-func ApplyCheck(p *model.Pool, results map[string]checker.Result) (ok, degraded, failed int) {
+// ApplyCheck 将检测结果写回状态机（任务书第十三章：不因一次失败立即删除）。
+// maxLatencyMS 是可用线：延迟超过即降级，连续 2 轮超线判死（沉降为 FAILED，
+// 之后走既有的 24h 复检 / 物理清理规则，不直接抹除）。
+func ApplyCheck(p *model.Pool, results map[string]checker.Result, maxLatencyMS int) (ok, degraded, failed int) {
 	nowS := now()
 	for _, n := range p.Nodes {
 		switch n.State {
@@ -130,13 +132,23 @@ func ApplyCheck(p *model.Pool, results map[string]checker.Result) (ok, degraded,
 		}
 		n.LastChecked = nowS
 		if r.OK {
-			n.FailCount = 0
-			n.LastSuccess = nowS
 			n.LatencyMS = r.LatencyMS
-			if r.LatencyMS >= 2000 {
-				n.State = model.StateDegraded
-				degraded++
+			if r.LatencyMS >= maxLatencyMS {
+				// 慢而活：降级并累计慢轮数，连续 2 轮超线判死
+				n.SlowCount++
+				n.LastSuccess = nowS
+				n.FailCount = 0
+				if n.SlowCount >= 2 {
+					n.State = model.StateFailed
+					failed++
+				} else {
+					n.State = model.StateDegraded
+					degraded++
+				}
 			} else {
+				n.SlowCount = 0
+				n.FailCount = 0
+				n.LastSuccess = nowS
 				n.State = model.StateAvailable
 				ok++
 			}
@@ -153,15 +165,32 @@ func ApplyCheck(p *model.Pool, results map[string]checker.Result) (ok, degraded,
 	return ok, degraded, failed
 }
 
-// Publishable 返回可发布节点（任务书第十五章排序规则的准入线）：
-// AVAILABLE / DEGRADED / 从未失败的 NEW。
-// 检测失败过的新节点仍留在池内观察（可复活），但不发布给客户端。
+// fastAvailable 统计延迟达标的可用节点数（荒年判定用）。
+func fastAvailable(p *model.Pool, maxLatencyMS int) int {
+	c := 0
+	for _, n := range p.Nodes {
+		if n.State == model.StateAvailable && n.LatencyMS < maxLatencyMS {
+			c++
+		}
+	}
+	return c
+}
+
+// Publishable 返回可发布节点。
+// 规则：AVAILABLE（延迟达标）+ 从未失败的 NEW 恒可发布；
+// DEGRADED（延迟超线）仅在"荒年"（达标可用 < 3 个）时兜底发布，
+// 避免慢节点挤占列表，也避免坏年份彻底无网可用。
 func Publishable(p *model.Pool) []*model.Node {
+	fast := fastAvailable(p, 800)
 	out := []*model.Node{}
 	for _, n := range p.Nodes {
 		switch n.State {
-		case model.StateAvailable, model.StateDegraded:
+		case model.StateAvailable:
 			out = append(out, n)
+		case model.StateDegraded:
+			if fast < 3 {
+				out = append(out, n)
+			}
 		case model.StateNew:
 			if n.FailCount == 0 {
 				out = append(out, n)
