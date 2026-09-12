@@ -27,29 +27,34 @@ const (
 
 const (
 	probeInterval   = 1500 * time.Millisecond
-	probeTimeout    = 25 * time.Second // 单节点连接验证上限
+	probeTimeout    = 25 * time.Second // 单批连接验证上限
 	probeHTTP       = "http://www.gstatic.com/generate_204"
-	failoverMax     = 5               // 任务书第十五章 v1：失败自动换节点，最多连续尝试 5 个
+	batchSize       = 8               // 内核 urltest 组的节点数（任务书第十五章：自动选择最快）
+	failoverMax     = 5               // 整批全灭时最多再换 5 批
 	healthInterval  = 20 * time.Second
 	healthFailLimit = 2
+	clashAPIPort    = 9095 // 内核 clash_api，用于查询 urltest 当前选中的节点
+	infoInterval    = 10 * time.Second
 )
 
 // Manager 管理 VPN 核心子进程与连接状态（单连接，串行管理）。
+// 连接形态：一个核心进程带一批（≤8）验证可用节点组成 urltest 组，
+// 节点失效由内核秒级自动切换；整批全灭时应用层才更换下一批。
 type Manager struct {
 	mu        sync.Mutex
 	settings  *Settings
 	phase     string
-	node      *model.Node
+	node      *model.Node // 当前实际使用的节点（由内核选择，信息循环刷新）
 	since     time.Time
 	lastError string
 	exitInfo  string
 	cmd       *exec.Cmd
 	done      chan struct{}
 	dataDir   string
-	sysProxy  bool          // 已接管系统代理，断开时需恢复
-	pool      []*model.Node // 自动换节点的候选（连接时快照，当前节点在最前）
-	poolIdx   int
-	gen       int // 生命周期代号，防跨代误操作
+	sysProxy  bool
+	pool      []*model.Node // 候选池快照
+	batchIdx  int           // 当前批索引
+	gen       int
 }
 
 // NewManager 创建核心管理器。
@@ -57,10 +62,10 @@ func NewManager(settings *Settings, dataDir string) *Manager {
 	return &Manager{settings: settings, phase: PhaseDisconnected, dataDir: dataDir}
 }
 
-// SetFailoverPool 设置自动换节点候选列表（当前选中节点须在最前）。
+// SetFailoverPool 设置候选池快照（调用方按可用优先排序）。
 func (m *Manager) SetFailoverPool(nodes []*model.Node) {
 	m.mu.Lock()
-	m.pool, m.poolIdx = nodes, 0
+	m.pool, m.batchIdx = nodes, 0
 	m.mu.Unlock()
 }
 
@@ -92,67 +97,73 @@ func (m *Manager) SetError(s string) {
 	m.mu.Unlock()
 }
 
-// Connect 发起连接。启动与验证在后台进行，失败时自动换下一个节点。
+// Connect 发起连接：取候选池当前批（≤8 节点）交给内核 urltest 自动选择。
 func (m *Manager) Connect(n *model.Node, logf func(string, ...any)) error {
 	m.mu.Lock()
 	if m.phase == PhaseConnecting || m.phase == PhaseConnected {
 		m.mu.Unlock()
 		return fmt.Errorf("已有连接在进行，请先断开")
 	}
+	if len(m.pool) > 0 && m.pool[0].ID != n.ID {
+		for i, c := range m.pool { // 用户点选的节点放组首
+			if c.ID == n.ID {
+				m.pool[0], m.pool[i] = m.pool[i], m.pool[0]
+				break
+			}
+		}
+	}
 	m.node = n
 	m.phase = PhaseConnecting
 	m.lastError = ""
 	m.since = time.Now()
-	m.gen++ // 新一代生命周期
+	m.gen++
 	gen := m.gen
 	m.mu.Unlock()
-	logf("发起连接: %s/%s:%d", n.Protocol, n.Server, n.Port)
+	logf("发起连接: %s/%s:%d（内核将在候选组内自动选择最快节点）", n.Protocol, n.Server, n.Port)
 	go m.supervise(gen, logf)
 	return nil
 }
 
-// supervise 是一代连接生命周期的监督者：启动当前节点，失败自动换下一个，
-// 成功后交给健康监控；健康监控判定失效也回到这里继续换。
+// supervise 一代连接生命周期的监督者：逐批启动，整批全灭才换下一批。
 func (m *Manager) supervise(gen int, logf func(string, ...any)) {
+	logf("[调试] supervise 启动 gen=%d", gen)
 	attempt := 0
 	for {
 		m.mu.Lock()
 		if m.gen != gen || m.phase != PhaseConnecting && m.phase != PhaseConnected {
+			logf("[调试] supervise 退出: m.gen=%d gen=%d phase=%s", m.gen, gen, m.phase)
 			m.mu.Unlock()
 			return
 		}
-		idx := m.poolIdx
+		bi := m.batchIdx
 		pool := m.pool
 		m.mu.Unlock()
-		if pool == nil || idx >= len(pool) {
+		batches := chunkPool(pool, batchSize)
+		if bi >= len(batches) {
 			break
 		}
-		node := pool[idx]
 		if attempt >= failoverMax+1 {
 			break
 		}
 		attempt++
-		if idx > 0 {
-			logf("自动换节点(%d/%d): %s/%s:%d", attempt, failoverMax+1, node.Protocol, node.Server, node.Port)
+		if bi > 0 {
+			logf("整批全灭，换下一批(%d/%d)：%d 个节点", attempt, failoverMax+1, len(batches[bi]))
 		}
-		phase, ok := m.runOne(node, logf)
-		if !ok {
-			// runOne 内部已处理停止；用户主动断开时直接退出
-			m.mu.Lock()
-			aborted := m.phase == PhaseDisconnected || m.gen != gen
-			m.poolIdx++
-			m.mu.Unlock()
-			if aborted {
-				return
-			}
-			continue
+		logf("[调试] supervise 调用 runBatch 批=%d 节点数=%d", bi, len(batches[bi]))
+		ok := m.runBatch(gen, batches[bi], logf)
+		if ok {
+			return // 已连接，交给健康监控与信息循环
 		}
-		_ = phase
-		return // runOne 内部已进入健康监控或已代际更替
+		m.mu.Lock()
+		aborted := m.phase == PhaseDisconnected || m.gen != gen
+		m.batchIdx++
+		m.mu.Unlock()
+		if aborted {
+			return
+		}
 	}
-	m.fail("连续 %d 个节点均连接失败，请稍后重试或刷新节点", failoverMax)
-	logf("自动换节点耗尽候选")
-	// 连接最终失败：必须归还系统代理，否则用户浏览器指向无监听端口
+	m.fail("连续 %d 批候选均连接失败，请稍后重试或刷新节点", failoverMax)
+	logf("候选批次耗尽")
 	m.mu.Lock()
 	sp := m.sysProxy
 	m.sysProxy = false
@@ -163,93 +174,116 @@ func (m *Manager) supervise(gen int, logf func(string, ...any)) {
 	}
 }
 
-// runOne 启动单个节点并阻塞验证直到：连上（进入健康监控）/失败/用户断开。
-func (m *Manager) runOne(node *model.Node, logf func(string, ...any)) (string, bool) {
+func chunkPool(nodes []*model.Node, size int) [][]*model.Node {
+	var out [][]*model.Node
+	for start := 0; start < len(nodes); start += size {
+		end := start + size
+		if end > len(nodes) {
+			end = len(nodes)
+		}
+		out = append(out, nodes[start:end])
+	}
+	return out
+}
+
+// runBatch 启动一批节点（urltest 组）并阻塞验证：连上返回 true。
+func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...any)) bool {
 	port := m.settings.ProxyPort
 	cfgPath := filepath.Join(m.dataDir, "core_config.json")
-	ob := publish.Outbound(node)
-	if ob == nil {
-		logf("节点参数不完整，无法生成配置，跳过")
-		m.mu.Lock()
-		m.lastError = "节点参数不完整"
-		m.mu.Unlock()
-		return "", false
+
+	var obs []any
+	var tags []string
+	for i := range batch {
+		n := *batch[i]
+		ob := publish.Outbound(&n)
+		if ob == nil {
+			continue
+		}
+		obs = append(obs, ob)
+		tags = append(tags, n.ID)
+	}
+	if len(tags) == 0 {
+		logf("本批节点参数均不完整，跳过")
+		return false
 	}
 	cfg := map[string]any{
-		"log":       map[string]any{"level": "warn"},
-		"inbounds":  []any{map[string]any{"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": port}},
-		"outbounds": []any{ob, map[string]any{"type": "direct", "tag": "direct"}},
-		"route":     map[string]any{"final": node.ID},
+		"log": map[string]any{"level": "warn"},
+		"experimental": map[string]any{
+			"clash_api": map[string]any{"external_controller": fmt.Sprintf("127.0.0.1:%d", clashAPIPort)},
+		},
+		"inbounds": []any{map[string]any{
+			"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": port,
+		}},
+		"outbounds": append([]any{
+			map[string]any{"type": "selector", "tag": "proxy",
+				"outbounds": append([]string{"auto"}, tags...), "default": "auto"},
+			map[string]any{"type": "urltest", "tag": "auto", "outbounds": tags,
+				"url": probeHTTP, "interval": "2m", "tolerance": 50},
+		}, append(obs, map[string]any{"type": "direct", "tag": "direct"})...),
+		"route": map[string]any{"final": "proxy"},
 	}
-	if b, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-		if err := os.WriteFile(cfgPath, b, 0o644); err != nil {
-			logf("写配置失败: %v", err)
-			return "", false
-		}
+	b, err := json.MarshalIndent(cfg, "", "  ")
+	if err == nil {
+		err = os.WriteFile(cfgPath, b, 0o644)
+	}
+	if err != nil {
+		logf("写配置失败: %v", err)
+		return false
 	}
 	if _, err := os.Stat(m.settings.SingBoxPath); err != nil {
 		logf("核心程序不存在: %s", m.settings.SingBoxPath)
 		m.fail("核心程序不存在，请在设置中检查路径")
-		return "", false
+		return false
 	}
 	if c, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)), 300*time.Millisecond); err == nil {
 		c.Close()
-		logf("代理端口 %d 被占用，跳过该候选", port)
+		logf("代理端口 %d 被占用，跳过本批", port)
 		m.fail("代理端口 %d 被占用，可能有残留核心进程", port)
-		return "", false
+		return false
 	}
 	if out, err := exec.Command(m.settings.SingBoxPath, "check", "-c", cfgPath).CombinedOutput(); err != nil {
 		logf("配置校验未通过: %s", firstLine(out))
-		return "", false
+		return false
 	}
 
 	cmd := exec.Command(m.settings.SingBoxPath, "run", "-c", cfgPath)
 	done := make(chan struct{})
 	if err := cmd.Start(); err != nil {
 		logf("核心启动失败: %v", err)
-		return "", false
+		return false
 	}
 	m.mu.Lock()
-	m.cmd, m.done, m.node = cmd, done, node
+	m.cmd, m.done, m.node = cmd, done, batch[0]
 	pid := cmd.Process.Pid
 	m.mu.Unlock()
-	logf("核心已启动 (PID %d)，节点 %s/%s:%d", pid, node.Protocol, node.Server, node.Port)
+	logf("核心已启动 (PID %d)，urltest 组 %d 个节点", pid, len(tags))
 
 	go func() {
 		_ = cmd.Wait()
 		close(done)
 	}()
 
-	ok := m.probe(port)
-	select {
-	case <-done:
-		// 进程已退出（被动）
-		m.mu.Lock()
-		still := m.cmd == cmd
-		if still {
-			m.cmd, m.done = nil, nil
+	if !m.probe(port) {
+		select {
+		case <-done:
+			logf("核心进程提前退出")
+		default:
 		}
-		m.mu.Unlock()
-		logf("核心进程提前退出")
-		return "", false
-	default:
-	}
-	if !ok {
 		m.stopProc(cmd, done, logf)
-		return "", false
+		return false
 	}
 	if m.aborted() {
 		m.stopProc(cmd, done, logf)
-		return "", false
+		return false
 	}
-	// 连接成功
 	m.mu.Lock()
 	m.phase = PhaseConnected
 	m.since = time.Now()
 	m.lastError = ""
 	m.mu.Unlock()
-	logf("连接成功: %s (%s:%d)", node.Name, node.Server, node.Port)
+	logf("连接成功（内核自动选择最快节点，组内 %d 个候选）", len(tags))
 	go m.exitWatch(cmd, logf)
+	go m.infoLoop(port, batch, logf)
 	go m.healthLoop(port, logf)
 	if m.settings.AutoSysProxy {
 		if err := SetSystemProxy(port, filepath.Join(m.dataDir, "sysproxy_backup.json")); err != nil {
@@ -261,8 +295,7 @@ func (m *Manager) runOne(node *model.Node, logf func(string, ...any)) (string, b
 			logf("已接管系统代理: 127.0.0.1:%d（断开时自动恢复原状）", port)
 		}
 	}
-	go m.fetchExitInfo(port)
-	return PhaseConnected, true
+	return true
 }
 
 // probe 在时限内反复探测本地代理端口与外网连通性。
@@ -276,7 +309,7 @@ func (m *Manager) probe(port int) bool {
 		time.Sleep(probeInterval)
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)), time.Second)
 		if err != nil {
-			continue // 核心可能仍在初始化
+			continue
 		}
 		conn.Close()
 		resp, err := client.Get(probeHTTP)
@@ -290,7 +323,49 @@ func (m *Manager) probe(port int) bool {
 	return false
 }
 
-// healthLoop 连接健康监控：连续失败达到阈值自动换下一个节点。
+// infoLoop 通过内核 clash_api 跟踪 urltest 当前选中的节点并刷新出口信息。
+func (m *Manager) infoLoop(port int, batch []*model.Node, logf func(string, ...any)) {
+	byTag := map[string]model.Node{}
+	for i := range batch {
+		byTag[batch[i].ID] = *batch[i]
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
+	tick := 0
+	for {
+		time.Sleep(infoInterval)
+		if m.currentGen() != m.currentGenSnap() || m.phaseNow() != PhaseConnected {
+			return
+		}
+		tick++
+		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/proxies/auto", clashAPIPort))
+		if err == nil {
+			var p struct {
+				Now string `json:"now"`
+			}
+			if json.NewDecoder(resp.Body).Decode(&p) == nil && p.Now != "" {
+				if n, ok := byTag[p.Now]; ok {
+					m.mu.Lock()
+					m.node = &n
+					m.mu.Unlock()
+				}
+			}
+			resp.Body.Close()
+		}
+		if tick%3 == 0 {
+			pc := m.proxyClient(port, 10*time.Second)
+			if r2, err := pc.Get("http://ip-api.com/line/?fields=query,country"); err == nil {
+				buf := make([]byte, 256)
+				n, _ := r2.Body.Read(buf)
+				r2.Body.Close()
+				m.mu.Lock()
+				m.exitInfo = string(buf[:n])
+				m.mu.Unlock()
+			}
+		}
+	}
+}
+
+// healthLoop 连接健康监控：整组失效时换下一批候选。
 func (m *Manager) healthLoop(port int, logf func(string, ...any)) {
 	fails := 0
 	client := m.proxyClient(port, 8*time.Second)
@@ -301,11 +376,9 @@ func (m *Manager) healthLoop(port int, logf func(string, ...any)) {
 			return
 		}
 		// 自愈：其他代理客户端可能关掉系统代理开关（实测 v2rayN 会）
-		if m.sysProxyOwned() {
-			if !SysProxyEnabled() {
-				if err := AssertSystemProxy(port); err == nil {
-					logf("检测到系统代理被其他程序关闭，已重新接管")
-				}
+		if m.sysProxyOwned() && !SysProxyEnabled() {
+			if err := AssertSystemProxy(port); err == nil {
+				logf("检测到系统代理被其他程序关闭，已重新接管")
 			}
 		}
 		resp, err := client.Get(probeHTTP)
@@ -321,13 +394,13 @@ func (m *Manager) healthLoop(port int, logf func(string, ...any)) {
 		if fails < healthFailLimit {
 			continue
 		}
-		logf("当前节点已失效，自动更换")
+		logf("整组候选均已失效，自动更换下一批")
 		m.killProc(logf)
 		m.mu.Lock()
 		m.phase = PhaseConnecting
-		m.poolIdx++
-		gen2 := m.gen + 1
-		m.gen = gen2
+		m.batchIdx++
+		m.gen++
+		gen2 := m.gen
 		m.mu.Unlock()
 		go m.supervise(gen2, logf)
 		return
@@ -345,11 +418,11 @@ func (m *Manager) exitWatch(cmd *exec.Cmd, logf func(string, ...any)) {
 		return
 	}
 	if phase == PhaseConnected || phase == PhaseConnecting {
-		logf("核心进程退出，自动更换节点")
+		logf("核心进程退出，自动更换候选批次")
 		m.killProc(logf)
 		m.mu.Lock()
 		m.phase = PhaseConnecting
-		m.poolIdx++
+		m.batchIdx++
 		m.gen++
 		gen := m.gen
 		m.mu.Unlock()
@@ -442,30 +515,13 @@ func (m *Manager) proxyClient(port int, timeout time.Duration) *http.Client {
 	}
 }
 
-func (m *Manager) fetchExitInfo(port int) {
-	client := m.proxyClient(port, 10*time.Second)
-	if r2, err := client.Get("http://ip-api.com/line/?fields=query,country"); err == nil {
-		buf := make([]byte, 256)
-		n, _ := r2.Body.Read(buf)
-		r2.Body.Close()
-		m.mu.Lock()
-		m.exitInfo = string(buf[:n])
-		m.mu.Unlock()
-	}
-}
-
 func (m *Manager) currentGen() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.gen
 }
 
-// sysProxyOwned 当前是否由本客户端接管着系统代理。
-func (m *Manager) sysProxyOwned() bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.sysProxy
-}
+func (m *Manager) currentGenSnap() int { return m.currentGen() }
 
 func (m *Manager) phaseNow() string {
 	m.mu.Lock()
@@ -477,6 +533,12 @@ func (m *Manager) aborted() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.phase == PhaseDisconnected
+}
+
+func (m *Manager) sysProxyOwned() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.sysProxy
 }
 
 func (m *Manager) fail(format string, args ...any) {
