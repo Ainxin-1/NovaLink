@@ -5,6 +5,7 @@ package parser
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -119,6 +120,31 @@ func hostport(hp string) (server string, port int, err error) {
 	return server, port, nil
 }
 
+// badServer 过滤明显无效的节点地址：回环、未指定、链路本地、
+// 内网保留段（目录源常见垃圾数据），这些地址不可能构成公网节点。
+func badServer(server string) bool {
+	host := strings.Trim(server, "[]")
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false // 域名交由后续检测判断
+	}
+	if ip.IsLoopback() || ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+	if v4 := ip.To4(); v4 != nil {
+		if v4[0] == 10 || v4[0] == 0 {
+			return true
+		}
+		if v4[0] == 172 && v4[1] >= 16 && v4[1] <= 31 {
+			return true
+		}
+		if v4[0] == 192 && v4[1] == 168 {
+			return true
+		}
+	}
+	return false
+}
+
 func parseSS(uri string) (model.Node, error) {
 	main := strings.TrimPrefix(uri, "ss://")
 	main = strings.SplitN(main, "#", 2)[0]
@@ -142,6 +168,9 @@ func parseSS(uri string) (model.Node, error) {
 	server, port, err := hostport(hp)
 	if err != nil {
 		return model.Node{}, err
+	}
+	if badServer(server) {
+		return model.Node{}, fmt.Errorf("reserved server address")
 	}
 	cred, err := decodeB64(userinfo)
 	if err != nil {
@@ -184,6 +213,9 @@ func parseTrojanLike(uri, proto string) (model.Node, error) {
 	server, port, err := hostport(main[i+1:])
 	if err != nil {
 		return model.Node{}, err
+	}
+	if badServer(server) {
+		return model.Node{}, fmt.Errorf("reserved server address")
 	}
 	password, err := url.QueryUnescape(cred)
 	if err != nil {
@@ -246,6 +278,9 @@ func parseVmess(uri string) (model.Node, error) {
 	port, err := strconv.Atoi(get("port"))
 	if err != nil || server == "" {
 		return model.Node{}, fmt.Errorf("bad vmess addr")
+	}
+	if badServer(server) {
+		return model.Node{}, fmt.Errorf("reserved server address")
 	}
 	id := get("id")
 	if id == "" {

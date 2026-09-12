@@ -55,8 +55,33 @@ func Deep(nodes []model.Node, singboxPath string, basePort, chunkSize int, logf 
 	return out
 }
 
-// deepChunk 验证一批节点，返回本批结果；留空表示本批未能检测。
+// deepChunk 验证一批节点；配置校验失败时二分拆小批重试，
+// 最终单个仍无法生成合法配置的节点记为失败（而非漏检）。
 func deepChunk(batch int, chunk []model.Node, singboxPath string, basePort int, workDir string) map[string]Result {
+	out := map[string]Result{}
+	res, ok := tryChunk(batch, chunk, singboxPath, basePort, workDir)
+	if ok {
+		for id, r := range res {
+			out[id] = r
+		}
+		return out
+	}
+	if len(chunk) == 1 {
+		out[chunk[0].ID] = Result{ID: chunk[0].ID, OK: false}
+		return out
+	}
+	mid := len(chunk) / 2
+	for id, r := range deepChunk(batch*10, chunk[:mid], singboxPath, basePort, workDir) {
+		out[id] = r
+	}
+	for id, r := range deepChunk(batch*10+1, chunk[mid:], singboxPath, basePort, workDir) {
+		out[id] = r
+	}
+	return out
+}
+
+// tryChunk 尝试整批验证；返回 ok=false 表示本批配置无法通过校验（触发二分）。
+func tryChunk(batch int, chunk []model.Node, singboxPath string, basePort int, workDir string) (map[string]Result, bool) {
 	out := map[string]Result{}
 	var inbounds []any
 	var outbounds []any
@@ -83,7 +108,7 @@ func deepChunk(batch int, chunk []model.Node, singboxPath string, basePort int, 
 		targets = append(targets, target{id: n.ID, port: port})
 	}
 	if len(targets) == 0 {
-		return out
+		return out, true
 	}
 	cfg := map[string]any{
 		"log":       map[string]any{"level": "warn"},
@@ -94,18 +119,18 @@ func deepChunk(batch int, chunk []model.Node, singboxPath string, basePort int, 
 	cfgPath := filepath.Join(workDir, fmt.Sprintf("deep_%d.json", batch))
 	b, err := json.Marshal(cfg)
 	if err != nil {
-		return out
+		return out, false
 	}
 	if err := os.WriteFile(cfgPath, b, 0o644); err != nil {
-		return out
+		return out, false
 	}
 	if _, err := exec.Command(singboxPath, "check", "-c", cfgPath).CombinedOutput(); err != nil {
-		return out // 整批跳过
+		return out, false // 本批配置无法通过校验，交由上层二分
 	}
 
 	cmd := exec.Command(singboxPath, "run", "-c", cfgPath)
 	if err := cmd.Start(); err != nil {
-		return out
+		return out, false
 	}
 	defer func() {
 		_ = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
@@ -148,5 +173,5 @@ func deepChunk(batch int, chunk []model.Node, singboxPath string, basePort int, 
 		}(t)
 	}
 	wg.Wait()
-	return out
+	return out, true
 }
