@@ -204,6 +204,12 @@ func (t *HealthTracker) Snapshot() []NodeHealth {
 	return out
 }
 
+// HealthOf 供界面查询单节点健康统计（Manager 转发）。
+func (m *Manager) HealthOf(id string) (NodeHealth, bool) { return m.tracker.Get(id) }
+
+// CooldownActive 供界面查询节点是否处于冷却期。
+func (m *Manager) CooldownActive(id string) bool { return m.tracker.InCooldown(id) }
+
 // Flush 将统计落盘（脏时才写）。
 func (t *HealthTracker) Flush() {
 	t.mu.Lock()

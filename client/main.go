@@ -41,6 +41,7 @@ type app struct {
 	checkTotal  int
 	checkDone   int
 	checking    bool
+	refreshing  bool
 }
 
 type overlayEntry struct {
@@ -81,11 +82,24 @@ func main() {
 	mux.HandleFunc("/api/connect", a.handleConnect)
 	mux.HandleFunc("/api/disconnect", a.handleDisconnect)
 	mux.HandleFunc("/api/check", a.handleCheck)
+	mux.HandleFunc("/api/refresh", a.handleRefresh)
 	mux.HandleFunc("/api/settings", a.handleSettings)
 	mux.HandleFunc("/api/log", a.handleLog)
 
 	url := "http://" + s.Listen
 	go openBrowser(url)
+	// 启动时后台检查节点池是否过期（超过 6 小时自动拉取云端最新）
+	if core.PoolStale(s.PoolPath, 6*time.Hour) {
+		go func() {
+			a.logf("本地节点池已超过 6 小时未更新，尝试拉取云端最新…")
+			src, n, err := a.manager.RefreshPool(a.logf)
+			if err != nil {
+				a.logf("节点池自动刷新失败: %v", err)
+				return
+			}
+			a.logf("节点池自动刷新完成（来源 %s，%d 个节点）", src, n)
+		}()
+	}
 	if err := http.ListenAndServe(s.Listen, mux); err != nil {
 		a.logf("服务退出: %v", err)
 		fmt.Fprintln(os.Stderr, err)
@@ -162,6 +176,13 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 		r1 := nodeRow{ID: n.ID, Name: n.Name, Protocol: n.Protocol, Server: n.Server,
 			Port: n.Port, State: n.State, Latency: n.LatencyMS, Sources: len(n.Sources),
 			FailCount: n.FailCount}
+		// 2.0 运行时健康度：健康分与冷却状态（仅本机观察过的节点有数据）
+		if h, ok := a.manager.HealthOf(n.ID); ok {
+			r1.Health = h.HealthScore
+			r1.Cool = h.CooldownUntil.After(time.Now())
+		} else if a.manager.CooldownActive(n.ID) {
+			r1.Cool = true
+		}
 		if e, ok := overlay[n.ID]; ok {
 			if e.OK {
 				r1.Reach, r1.Online = "yes", true
@@ -198,6 +219,8 @@ type nodeRow struct {
 	Sources   int    `json:"sources"`
 	Online    bool   `json:"online"`
 	FailCount int    `json:"fail_count"`
+	Health    int    `json:"health,omitempty"` // 本机健康分（0=无数据）
+	Cool      bool   `json:"cooldown,omitempty"`
 }
 
 func nodeLess(a, b nodeRow) bool {
@@ -308,6 +331,25 @@ func (a *app) handleCheck(w http.ResponseWriter, r *http.Request) {
 		a.logf("设备端检测完成: %d 个节点，耗时 %s", len(due), time.Since(start).Round(time.Second))
 	}()
 	writeJSON(w, map[string]any{"ok": true, "total": len(due)})
+}
+
+// handleRefresh 从云端订阅拉取最新节点池（jsDelivr → raw → 代理回退）。
+func (a *app) handleRefresh(w http.ResponseWriter, r *http.Request) {
+	a.mu.Lock()
+	if a.checking || a.refreshing {
+		a.mu.Unlock()
+		http.Error(w, "检测或更新正在进行中，请稍后再试", 409)
+		return
+	}
+	a.refreshing = true
+	a.mu.Unlock()
+	defer func() { a.mu.Lock(); a.refreshing = false; a.mu.Unlock() }()
+	src, n, err := a.manager.RefreshPool(a.logf)
+	if err != nil {
+		http.Error(w, err.Error(), 502)
+		return
+	}
+	writeJSON(w, map[string]any{"ok": true, "source": src, "total": n})
 }
 
 func (a *app) handleSettings(w http.ResponseWriter, r *http.Request) {

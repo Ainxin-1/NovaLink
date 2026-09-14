@@ -12,6 +12,7 @@ import (
 type Settings struct {
 	SingBoxPath  string `json:"singbox_path"`  // 核心可执行文件路径
 	PoolPath     string `json:"pool_path"`     // 节点池文件（Node Pipeline 产出）
+	PoolURL      string `json:"pool_url"`      // 云端节点池订阅地址（jsDelivr，留空用默认）
 	Listen       string `json:"listen"`        // 本客户端 Web 界面监听地址
 	ProxyPort    int    `json:"proxy_port"`    // 核心 mixed 入站端口
 	AutoSysProxy bool   `json:"auto_sysproxy"` // 连接成功后自动接管系统代理
@@ -53,6 +54,7 @@ func defaultSettings() *Settings {
 	return &Settings{
 		SingBoxPath:  "E:/NovaLink/core/vpn-core/sing-box-1.14.0-windows-amd64/sing-box.exe",
 		PoolPath:     "E:/NovaLink/node/data/pool.json",
+		PoolURL:      DefaultPoolURL,
 		Listen:       "127.0.0.1:7892",
 		ProxyPort:    7890,
 		AutoSysProxy: true,

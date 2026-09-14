@@ -40,6 +40,7 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
 .tag{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--sub)}
 .tag.ok{color:var(--ok);border-color:var(--ok)}.tag.no{color:var(--bad);border-color:var(--bad)}
 .tag.AVAILABLE{color:var(--ok)}.tag.FAILED{color:var(--bad)}.tag.DEGRADED{color:var(--warn)}
+.tag.cooldown{color:var(--warn);border-color:var(--warn)}
 .mt{margin-top:16px}.mb{margin-bottom:12px}
 .empty{color:var(--sub);text-align:center;padding:30px 0}
 .kv{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
@@ -63,6 +64,7 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
   <div class="card">
     <div class="big"><span id="phase-dot" class="dot disconnected"></span><span id="phase-text">未连接</span></div>
     <div class="sub" id="current-node">当前节点：—</div>
+    <div class="sub" id="net-info"></div>
     <div class="sub" id="exit-info"></div>
     <div class="sub" id="sysproxy-info" style="color:var(--ok)"></div>
     <div class="kv">
@@ -93,6 +95,7 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
         </select>
       </div>
       <div class="row">
+        <button id="btn-refresh-pool" class="btn small">更新节点池</button>
         <button id="btn-check" class="btn small">设备端检测</button>
         <button id="btn-reload" class="btn small">刷新列表</button>
       </div>
@@ -100,8 +103,8 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
     <div class="sub mb" id="nodes-meta"></div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>节点</th><th>协议</th><th>地址</th><th>延迟</th><th>状态</th><th>本机检测</th><th></th></tr></thead>
-        <tbody id="node-rows"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
+        <thead><tr><th>节点</th><th>协议</th><th>地址</th><th>延迟</th><th>健康</th><th>状态</th><th>本机检测</th><th></th></tr></thead>
+        <tbody id="node-rows"><tr><td colspan="8" class="empty">加载中…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -113,6 +116,8 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
     <input id="set-sb" class="wide">
     <label>节点池文件路径</label>
     <input id="set-pool" class="wide">
+    <label>节点池订阅地址（云端自动更新来源，留空用默认仓库）</label>
+    <input id="set-poolurl" class="wide">
     <label>代理端口（核心本地入站）</label>
     <input id="set-port" type="number" style="width:140px">
     <label>界面监听地址（变更后需重启）</label>
@@ -147,6 +152,8 @@ function tag(t,cls){return `<span class="tag ${cls||""}">${t}</span>`}
 async function poll(){try{const s=await (await fetch("/api/status")).json();
   $("phase-dot").className="dot "+s.phase;$("phase-text").textContent=phaseText[s.phase]||s.phase;
   $("current-node").textContent="当前节点："+(s.node&&s.node.id?s.node.name+"（"+s.node.protocol+"，"+s.node.server+":"+s.node.port+"）":"—");
+  const nsName={"HEALTHY":"网络健康","DEGRADED":"网络降级","FAILED":"网络异常"}[s.network_state]||"";
+  $("net-info").textContent=s.phase==="connected"?(nsName+(s.health?(" · 当前节点健康分 "+s.health.score+"（成功"+s.health.success_count+"/失败"+s.health.failure_count+"，均延"+s.health.avg_latency_ms+"ms）"):"")):"";
   $("exit-info").textContent=s.exit_info?("出口："+s.exit_info.replace(/\s+/g," ")):"";
   $("sysproxy-info").textContent=s.sysproxy?"系统代理已由 NovaLink 接管，浏览器无需其他设置":"";
   $("home-err").textContent=s.last_error||"";
@@ -166,6 +173,14 @@ $("btn-connect").onclick=async()=>{
 };
 $("btn-disconnect").onclick=async()=>{await fetch("/api/disconnect",{method:"POST"});poll();};
 $("btn-reload").onclick=()=>loadNodes();
+$("btn-refresh-pool").onclick=async()=>{
+  const b=$("btn-refresh-pool");b.disabled=true;const old=b.textContent;b.textContent="更新中…";
+  try{const r=await fetch("/api/refresh",{method:"POST"});
+    if(r.ok){const d=await r.json();$("nodes-meta").textContent="节点池已更新（来源 "+d.source+"，共 "+d.total+" 个节点）";
+      await loadNodes();fillPoolMeta();}
+    else{$("nodes-meta").textContent="更新失败："+(await r.text());}
+  }finally{b.disabled=false;b.textContent=old;}
+};
 $("btn-check").onclick=async()=>{const r=await fetch("/api/check",{method:"POST"});if(!r.ok)alert(await r.text());};
 $("btn-logrefresh").onclick=loadLogs;
 $("search").oninput=()=>loadNodes();$("state-filter").onchange=()=>loadNodes();
@@ -179,8 +194,9 @@ async function loadNodes(){
   if(!d.nodes.length){tb.innerHTML='<tr><td colspan="7" class="empty">没有匹配的节点</td></tr>';return}
   tb.innerHTML=d.nodes.map(n=>{
     const reach=n.reach==="yes"?tag("可达 "+n.latency_ms+"ms","ok"):n.reach==="no"?tag("不可达","no"):tag("未检测");
-    const st=tag(n.state,n.state);
-    return `<tr><td title="${esc(n.name)}">${esc(n.name||"(未命名)")}</td><td>${n.protocol}</td><td>${esc(n.server)}:${n.port}</td><td>${n.latency_ms?n.latency_ms+"ms":"—"}</td><td>${st}</td><td>${reach}</td>
+    const st=tag(n.state,n.state)+(n.cooldown?tag("冷却中","cooldown"):"");
+    const hp=n.health?tag(n.health,n.health>=70?"AVAILABLE":n.health>=40?"DEGRADED":"FAILED"):'<span class="tag">—</span>';
+    return `<tr><td title="${esc(n.name)}">${esc(n.name||"(未命名)")}</td><td>${n.protocol}</td><td>${esc(n.server)}:${n.port}</td><td>${n.latency_ms?n.latency_ms+"ms":"—"}</td><td>${hp}</td><td>${st}</td><td>${reach}</td>
     <td><button class="btn small primary" onclick="pick('${n.id}')" ${n.state==="EXPIRED"||n.state==="REMOVED"?"disabled":""}>${selected===n.id?"已选":"选择"}</button></td></tr>`;
   }).join("");
 }
@@ -189,11 +205,13 @@ window.pick=id=>{selected=id;$("hint").textContent="已选择节点，回到首�
   document.querySelectorAll("nav button")[0].click();poll();};
 async function loadSettings(){const s=await (await fetch("/api/settings")).json();
   $("set-sb").value=s.singbox_path;$("set-pool").value=s.pool_path;
+  $("set-poolurl").value=s.pool_url||"";
   $("set-port").value=s.proxy_port;$("set-listen").value=s.listen;
   $("set-sysproxy").checked=!!s.auto_sysproxy;}
 $("btn-save").onclick=async()=>{
   const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({singbox_path:$("set-sb").value,pool_path:$("set-pool").value,
+      pool_url:$("set-poolurl").value.trim(),
       proxy_port:+$("set-port").value,listen:$("set-listen").value,
       auto_sysproxy:$("set-sysproxy").checked})});
   $("set-msg").textContent=r.ok?"已保存":("失败: "+await r.text());};
