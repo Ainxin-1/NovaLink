@@ -1,0 +1,7 @@
+{
+  "singbox_path": "./sing-box",
+  "deep": true,
+  "chunk_size": 64,
+  "base_port": 30000,
+  "max_latency_ms": 800
+}
