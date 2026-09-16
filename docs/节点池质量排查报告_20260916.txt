@@ -1,0 +1,192 @@
+# NovaLink 节点池质量排查报告
+
+日期：2026-09-16
+起因：用户反馈"节点太多了吧，不稳定的留他也没用啊"
+
+---
+
+## 一、结论速览
+
+| 项目 | 结果 |
+|---|---|
+| 池子瘦身 | 32956 → 14633 节点（-56%），一次清掉 18323 个僵尸节点 |
+| 找到的根因 | **探测目标选错**：用的 gstatic 国内直连 0.3s 就返回 204，判别力为零 |
+| 当前网络实测 | 385 个候选节点，**协议层 0 通**；6 个精选节点（含 reality）**0/6 通** |
+| 修复 | 探测目标改为 google（直连不可达）+ 环境变量可覆盖 + 7 个防回归单测 |
+| CI 修复 | 管线跑完 26 分钟后 push 被拒致整轮白跑 → 加 rebase 重试 + concurrency |
+
+---
+
+## 二、根因：探测目标本身直连可达，验证形同虚设
+
+### 实测数据（国内家宽）
+
+```
+直连 https://www.gstatic.com/generate_204    → 204，0.3s   ← 通的！
+直连 https://www.google.com/generate_204     → 超时        ← 不通
+直连 https://www.youtube.com                 → 超时        ← 不通
+直连 https://cp.cloudflare.com/generate_204  → 204，0.7s   ← 通的！
+```
+
+### 问题所在
+
+管线 `node/checker/deep.go` 的探测目标一直是 **gstatic**：
+
+```go
+const probeURL = "https://www.gstatic.com/generate_204"   // ❌
+```
+
+判定逻辑是"走节点代理请求该 URL，返回 204 判可用"。但**gstatic 国内直连可达**，
+于是：节点即使是死的、甚至流量根本没走节点而是回落直连，
+只要代理链路能建起来就返回 204 → **被判"可用"**。
+
+这就是"CI 说 1276 个可用、国内只有 40% 可达"的直接原因 —— **整池假阳性**。
+
+客户端 `probeTargets` 同样含 2 个直连可达目标（gstatic / cloudflare），3 个里 2 个是废的。
+
+---
+
+## 三、证据链：三层验证逐步锁定
+
+### 第 1 层：TCP 预筛（客户端本地）
+
+```
+[POOL] 本地预筛：扫描 64 个候选，TCP 可达 64 个
+```
+
+TCP 全通 → 但**这不能说明能翻墙**。
+
+### 第 2 层：协议层批量验证（verify/verify_protocol.py）
+
+```
+AVAILABLE 514 个，其中脏数据 129 个已排除，待验证 385 个
+[1/20] 批 20 -> 通 0
+...
+[20/20] 批 5  -> 通 0
+耗时 995.3s | 协议可通 0 / 385 (0%)
+```
+
+### 第 3 层：单节点深挖（完整 sing-box 日志）
+
+```
+节点: fb1426c168c03ddd vless 104.21.69.130 443
+ERROR connection: open connection to www.gstatic.com:443 using outbound/vless[...]:
+      dial tcp 104.21.69.130:443: i/o timeout          ← 连接阶段就超时
+
+节点: ff2977fe0bcff319 vless ccs2g.pai50288.uk 443（DNS 解析到 172.67.153.156）
+ERROR connection: ... read tcp 192.168.31.98:62406->172.67.153.156:443:
+      wsarecv: An existing connection was forcibly closed by the remote host   ← RST 注入
+```
+
+**失败特征**：`i/o timeout` + `WinError 10054（RST）`
+= **TCP 能握手，传输层被中断/重置**，这是 GFW 对 Cloudflare IP 的典型处置。
+
+### 补充：6 个精选节点全部失败
+
+含 3 个 reality 高级协议（`195.133.73.65:443`）+ 3 个非 CF 独立 IP：
+
+```
+不通  4f90abc1d4bf6632 195.133.73.65:443 sec=reality
+不通  74059b293c464152 195.133.73.65:443 sec=reality
+不通  1aa2d6af69699caa 195.133.73.65:443 sec=reality
+不通  cc113f72cf1a20ea 116.204.164.60:7443 sec=tls
+不通  96f92672d5b0caba 116.204.164.5:7443 sec=tls
+不通  ee993f98a2aaa375 178.83.110.32:7443 sec=tls
+
+可翻墙: 0 / 6
+```
+
+---
+
+## 四、池内构成分析（514 个 AVAILABLE）
+
+```
+协议分布: vless 469 / trojan 45
+IP 段 Top: 172.64.x(81) 162.159.x(53) 104.18.x(53) 104.21.x(29) 188.114.x(27) 104.16.x(22)
+端口 Top:  8880(180) 443(105) 80(35) 8080(32) 2086(26) 2087(25) 2095(23) 2052(23)
+```
+
+**全是 Cloudflare CDN 段** —— 即绝大多数是别人搭的 **Cloudflare Workers 免费反代**，
+存活完全取决于对方免费额度与是否运维，不由我们控制。
+端口多为 8880/2086/2095 等 CF 明文端口（`security=none` 走明文 ws）。
+
+---
+
+## 五、修复清单
+
+### 1. 探测目标（核心修复）
+
+| 文件 | 改动 |
+|---|---|
+| `node/checker/deep.go` | `probeURL` → `ProbeURL()`；默认 `www.google.com/generate_204`；支持 `NOVANODE_PROBE_URL` 覆盖 |
+| `client/core/core.go` | `probeHTTP` + `probeTargets` 改为 google / youtube / facebook（全部直连不可达） |
+| `.github/workflows/node-pipeline.yml` | 补充职责边界注释 |
+
+### 2. 职责边界（重要认知）
+
+- **CI（GitHub 海外机房）**：只能验证"节点本身活着"（TCP 可达 + 协议握手 + 能取回外网内容）。
+  海外到任何目标都通，**物理上无法验证"国内能否翻墙"**。
+- **国内客户端**：真实可用性的唯一把关方（本地预筛 + 设备端检测）。
+
+### 3. 上游脏数据过滤
+
+129 个节点的 `path` 是 `/?ed=2560security=tls` —— **上游 URI 漏写 `&`**：
+
+```
+原始: ?security=none&type=ws&path=%2F%3Fed%3D2560security%3Dtls&host=...
+                                        ↑ 应在 2560 后加 %26
+```
+
+已在 `node/parser/parser.go` 加 `badWSPath()` 解析期丢弃。
+
+### 4. CI 推送被拒（导致整轮白跑）
+
+```
+! [rejected] main -> main (fetch first)
+error: failed to push some refs
+```
+
+管线跑了 26 分钟产出完整结果，却卡在 push —— 因为期间有本地提交，checkout 版本落后。
+修复：`pull --rebase --autostash` + 3 次重试 + `concurrency` 防实例冲突。
+
+### 5. 防回归单测（共 7 个新增）
+
+- `node/checker/probe_test.go`（3）：锁定"探测目标不得直连可达"、必须是 `/generate_204`、环境变量可覆盖
+- `client/core/probe_test.go`（3）：同上（probeTargets / probeHTTP / directTargets 反向校验）
+- `node/parser/parser_test.go`（4）：畸形 ws 路径识别 + 不误杀合法 query + 端到端
+
+---
+
+## 六、提交记录
+
+| commit | 内容 |
+|---|---|
+| `c173c38` | 节点池大瘦身：僵尸节点判死出池（32956→14633） |
+| `410aaf0` | 探测目标改直连不可达目标 + ws 路径畸形过滤 + 7 个防回归单测 |
+| `1540d88` | 修复 CI 推送被拒致整轮白跑 |
+
+---
+
+## 七、验证工具（verify/ 目录，已在 .gitignore）
+
+| 脚本 | 用途 |
+|---|---|
+| `verify_protocol.py` | 批量协议层验证（sing-box urltest + clash API 逐个测延迟） |
+| `range_test.py` | 指定索引逐节点深挖，输出能否翻墙的明确结论 |
+| `single_test.py` | 单节点验证 + 完整 sing-box 日志 |
+| `e2e_slim2.py` | 客户端端到端（启动 → 读池子 → 触发连接 → 观察切换 → 测代理） |
+
+**工具使用注意**：本机有 `HTTP_PROXY=http://127.0.0.1:50718`，
+所有 localhost API 探测必须 `build_opener(ProxyHandler({}))` 绕开，否则被拦成 502。
+
+---
+
+## 八、后续建议
+
+1. **等 CI 用新代码跑完**（run 35062899062），观察新的 AVAILABLE 数量是否大幅下降
+   —— 下降是**好事**，说明假阳性被清除了。
+2. **若国内实测仍 0 通**：说明当前网络环境下这批免费 CF 节点整体不可用，
+   应考虑更换节点来源（非 CF 的独立服务器节点）或改用付费节点。
+3. **客户端可加"协议级复验"**：现在的本地预筛只做 TCP，可升级为真实拨号验证
+   （成本较高，需权衡；参考 `verify/verify_protocol.py` 的实现）。
+4. **探测目标应可配置到客户端 UI**：让用户看到"用哪个目标判定可用"，避免黑盒。
