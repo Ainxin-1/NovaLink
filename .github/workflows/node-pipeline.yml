@@ -12,6 +12,12 @@ on:
 permissions:
   contents: write
 
+# 同一时刻只允许一个管线实例：多个实例同时跑会互相把 push 顶掉
+# （实测 35057611484 即因 push 被拒而失败）。不取消进行中的，让它跑完。
+concurrency:
+  group: node-pipeline
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -71,5 +77,21 @@ jobs:
           git config user.name "nova-pipeline-bot"
           git config user.email "nova-pipeline-bot@users.noreply.github.com"
           git add data/pool.json data/pipeline.json data/published/ data/sources.json
-          git diff --cached --quiet && echo "无变化" || git commit -m "节点池更新 $(date -u '+%F %T')"
-          git push
+          if git diff --cached --quiet; then
+            echo "无变化"
+            exit 0
+          fi
+          git commit -m "节点池更新 $(date -u '+%F %T')"
+          # 管线要跑 20-90 分钟，期间可能有人（或另一个 CI 实例）推了新提交。
+          # 直接 push 会被拒（fetch first），导致整轮检测白跑 —— 实测 35057611484
+          # 就是这样失败的（管线已成功产出，只卡在推送）。故先 rebase 再推，并重试。
+          for i in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push; then
+              echo "推送成功（第 $i 次尝试）"
+              exit 0
+            fi
+            echo "推送失败，重试 $i/3…"
+            sleep 5
+          done
+          echo "推送重试耗尽" >&2
+          exit 1
