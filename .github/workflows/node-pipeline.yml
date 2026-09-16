@@ -52,10 +52,14 @@ jobs:
           c.setdefault("chunk_size", 64)
           c.setdefault("base_port", 30000)
           c.setdefault("max_latency_ms", 800)
+          c.setdefault("max_deep", 6000)
           p.write_text(json.dumps(c,indent=2))
           EOF
           # fetch 一条命令即完成全流程（含检测与发布），无需再跑 check。
           ./novanode fetch -dir data
+          # 清掉从未成功过的僵尸节点，避免池子无限膨胀（实测单轮可清 1.8 万个）。
+          ./novanode prune -dir data
+          ./novanode status -dir data
 
       - name: 提交发布产物
         run: |

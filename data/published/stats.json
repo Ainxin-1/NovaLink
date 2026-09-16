@@ -8,10 +8,9 @@
   "by_state": {
     "AVAILABLE": 1276,
     "DEGRADED": 13351,
-    "FAILED": 6,
-    "NEW": 18323
+    "FAILED": 6
   },
-  "pool_total": 32956,
+  "pool_total": 14633,
   "published": 1276,
-  "updated": "2026-09-14T05:39:10Z"
+  "updated": "2026-09-16T05:30:34Z"
 }

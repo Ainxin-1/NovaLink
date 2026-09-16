@@ -121,18 +121,22 @@ func checkDue(dir string, pool *model.Pool, deep pipelineCfg) map[string]checker
 	return tcpResults
 }
 
-// prioritize 在候选超过上限时挑出最该检测的节点：
-// 已发布状态（可用/降级）优先保活，其次是新节点与候选，
-// 最后是失败节点（本来就有 24h 降频），同档内按加入时间新的优先。
+// prioritize 在候选超过上限时挑出最该检测的节点。
+//
+// 分档思路：AVAILABLE 是当前发布主力，必须优先保活；NEW 是潜力股（还没定级）；
+// DEGRADED 数量可能极大（实测 1.3 万个），若与 AVAILABLE 同档会把名额吃光、
+// 让新节点永远排不上号，故单独降一档。同档内按加入时间新的优先。
 func prioritize(nodes []model.Node, limit int) []model.Node {
 	rank := func(s string) int {
 		switch s {
-		case model.StateAvailable, model.StateDegraded:
-			return 0 // 正在发布，必须优先保活
+		case model.StateAvailable:
+			return 0 // 正在发布的主力，必须保活
 		case model.StateNew, model.StateTesting, "":
-			return 1 // 新节点/候选，尽快定级
+			return 1 // 尚未定级的潜力股
+		case model.StateDegraded:
+			return 2 // 已验证过能连，但数量大，降档慢查
 		default:
-			return 2 // FAILED 等，降频即可
+			return 3 // FAILED 等，24h 降频即可
 		}
 	}
 	out := make([]model.Node, len(nodes))
@@ -181,6 +185,10 @@ func main() {
 	case "publish":
 		if err := runPublish(*dir); err != nil {
 			fail("publish 失败: %v", err)
+		}
+	case "prune":
+		if err := runPrune(*dir); err != nil {
+			fail("prune 失败: %v", err)
 		}
 	case "status":
 		if err := runStatus(*dir); err != nil {
@@ -293,6 +301,36 @@ func runCheck(dir string, full bool) error {
 	return err
 }
 
+// runPrune 清理历史积压的僵尸节点并重新发布。
+// 用途：状态机规则收紧后，把旧池子里「从未成功过、且已连续失败到上限」的
+// NEW/FAILED 节点一次性清出，避免它们继续占地方（实测积压约 1.8 万个）。
+func runPrune(dir string) error {
+	poolPath := filepath.Join(dir, "pool.json")
+	pool, err := cache.Load(poolPath)
+	if err != nil {
+		return err
+	}
+	before := len(pool.Nodes)
+	zc := cache.ZombieCount(pool)
+	logf("prune: 池内 %d 个节点，其中僵尸（从未成功且连续失败≥%d）%d 个",
+		before, cache.NewFailLimit, zc)
+	if zc == 0 {
+		logf("prune: 无需清理")
+		return nil
+	}
+	kept := cache.PruneZombies(pool)
+	logf("prune: 已清出 %d 个，池内剩余 %d", before-kept, kept)
+	if err := cache.Save(pool, poolPath); err != nil {
+		return err
+	}
+	n, err := publish.WriteAll(filepath.Join(dir, "published"), pool, cache.Publishable(pool))
+	if err != nil {
+		return err
+	}
+	logf("prune: 重新发布 %d 个节点", n)
+	return nil
+}
+
 func runPublish(dir string) error {
 	pool, err := cache.Load(filepath.Join(dir, "pool.json"))
 	if err != nil {
@@ -384,5 +422,10 @@ func fail(format string, args ...any) {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "用法: novanode <fetch|check|publish|status> [-dir 工作目录]")
+	fmt.Fprintln(os.Stderr, "用法: novanode <fetch|check|publish|prune|status> [-dir 工作目录]")
+	fmt.Fprintln(os.Stderr, "  fetch   一轮完整流程（抓取→解析→去重→检测→清理→发布）")
+	fmt.Fprintln(os.Stderr, "  check   复检到期节点；加 -full 强制全量")
+	fmt.Fprintln(os.Stderr, "  publish 仅重新生成发布文件")
+	fmt.Fprintln(os.Stderr, "  prune   清理从未成功过的僵尸节点并重新发布")
+	fmt.Fprintln(os.Stderr, "  status  打印节点池统计")
 }
