@@ -17,3 +17,6 @@ verify/
 client_debug.log
 client_run.log
 deep_check.log
+
+# 工作区记忆与本地技能（非发布内容）
+.workbuddy/

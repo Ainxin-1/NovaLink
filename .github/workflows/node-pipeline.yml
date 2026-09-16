@@ -15,7 +15,11 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 90  # 首跑需全量深检（云端源可达 1.4 万节点），后续运行增量检测会快很多
+    # 首跑需全量深检（云端源可达 1.5 万节点，TCP 快筛后进入深检的约 1.5 万个，
+    # 单批 64 个约 1 分钟，全量约 50-70 分钟），故预留 90 分钟。
+    # 注意：novanode fetch 内部已包含「抓取→解析→去重→检测→发布」全流程，
+    # 不要再单独调用 novanode check（那会强制全量复检，把耗时翻倍导致超时）。
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -38,14 +42,20 @@ jobs:
         env:
           SINGBOX: ${{ github.workspace }}/sing-box
         run: |
-          ./novanode fetch -dir data
-          # 覆盖 pipeline.json 中的核心路径（本地默认路径在 CI 不存在）
-          python3 - <<'EOF' 2>/dev/null || sed -i 's|"singbox_path": "[^"]*"|"singbox_path": "./sing-box"|' data/pipeline.json
+          # 先把 CI 专用的核心路径写入配置，再一次性跑完整管线。
+          python3 - <<'EOF'
           import json,pathlib
-          p=pathlib.Path("data/pipeline.json");c=json.loads(p.read_text())
-          c["singbox_path"]="./sing-box";p.write_text(json.dumps(c,indent=2))
+          p=pathlib.Path("data/pipeline.json")
+          c=json.loads(p.read_text()) if p.exists() else {}
+          c["singbox_path"]="./sing-box"
+          c.setdefault("deep", True)
+          c.setdefault("chunk_size", 64)
+          c.setdefault("base_port", 30000)
+          c.setdefault("max_latency_ms", 800)
+          p.write_text(json.dumps(c,indent=2))
           EOF
-          ./novanode check -dir data
+          # fetch 一条命令即完成全流程（含检测与发布），无需再跑 check。
+          ./novanode fetch -dir data
 
       - name: 提交发布产物
         run: |

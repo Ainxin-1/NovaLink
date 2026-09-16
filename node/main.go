@@ -3,7 +3,7 @@
 // 用法:
 //
 //	novanode fetch    [-dir 数据目录]   一轮完整流程：获取→解析→去重→合并→粗筛→过期清理→保存→发布
-//	novanode check    [-dir 数据目录]   仅重跑粗筛并保存
+//	novanode check    [-dir 数据目录]   复检到期节点并保存；加 -full 强制全量复检
 //	novanode publish  [-dir 数据目录]   仅重新生成发布文件
 //	novanode status   [-dir 数据目录]   打印节点池统计
 //
@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"novanode/cache"
@@ -36,12 +37,14 @@ type pipelineCfg struct {
 	ChunkSize    int    `json:"chunk_size"`
 	BasePort     int    `json:"base_port"`
 	MaxLatencyMS int    `json:"max_latency_ms"` // 可用线：超过则降级，连续2轮超线判死
+	MaxDeep      int    `json:"max_deep"`       // 单轮深检上限（0=不限）；深检单批约 1 分钟，需控总时长
 }
 
 func loadPipeline(dir string) pipelineCfg {
 	def := pipelineCfg{
 		SingBoxPath: "E:/NovaLink/core/vpn-core/sing-box-1.14.0-windows-amd64/sing-box.exe",
 		Deep:        true, ChunkSize: 64, BasePort: 30000, MaxLatencyMS: 800,
+		MaxDeep: 6000, // 云端源可达 1.5 万节点，限 6000 个可使单轮深检约 100 分钟可控
 	}
 	b, err := os.ReadFile(filepath.Join(dir, "pipeline.json"))
 	if err != nil {
@@ -95,6 +98,13 @@ func checkDue(dir string, pool *model.Pool, deep pipelineCfg) map[string]checker
 	}
 	if deep.Deep && deep.SingBoxPath != "" {
 		if _, err := os.Stat(deep.SingBoxPath); err == nil {
+			// 深检单批约 1 分钟，必须控总量，否则 CI 定时任务跑不完。
+			// 优先级：可用/降级（要维持发布）> 候选（NEW/TESTING）> 其他。
+			if deep.MaxDeep > 0 && len(alive) > deep.MaxDeep {
+				logf("深度检测限流: 存活 %d 个，本轮取优先级最高的 %d 个（其余留到下一轮）",
+					len(alive), deep.MaxDeep)
+				alive = prioritize(alive, deep.MaxDeep)
+			}
 			logf("深度检测开始: %d 个节点（协议级真实握手，批 %d）", len(alive), deep.ChunkSize)
 			results := checker.Deep(alive, deep.SingBoxPath, deep.BasePort, deep.ChunkSize, logf)
 			for id := range tcpResults { // TCP 已死的直接计失败
@@ -111,6 +121,32 @@ func checkDue(dir string, pool *model.Pool, deep pipelineCfg) map[string]checker
 	return tcpResults
 }
 
+// prioritize 在候选超过上限时挑出最该检测的节点：
+// 已发布状态（可用/降级）优先保活，其次是新节点与候选，
+// 最后是失败节点（本来就有 24h 降频），同档内按加入时间新的优先。
+func prioritize(nodes []model.Node, limit int) []model.Node {
+	rank := func(s string) int {
+		switch s {
+		case model.StateAvailable, model.StateDegraded:
+			return 0 // 正在发布，必须优先保活
+		case model.StateNew, model.StateTesting, "":
+			return 1 // 新节点/候选，尽快定级
+		default:
+			return 2 // FAILED 等，降频即可
+		}
+	}
+	out := make([]model.Node, len(nodes))
+	copy(out, nodes)
+	sort.SliceStable(out, func(i, j int) bool {
+		ri, rj := rank(out[i].State), rank(out[j].State)
+		if ri != rj {
+			return ri < rj
+		}
+		return out[i].FirstSeen > out[j].FirstSeen // 新的优先
+	})
+	return out[:limit]
+}
+
 func countOK(m map[string]checker.Result) int {
 	c := 0
 	for _, r := range m {
@@ -123,6 +159,7 @@ func countOK(m map[string]checker.Result) int {
 
 func main() {
 	dir := flag.String("dir", "data", "工作目录（sources.json/pool.json/published）")
+	full := flag.Bool("full", false, "check 时强制全量复检（默认只测到期节点）")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		usage()
@@ -138,7 +175,7 @@ func main() {
 			fail("fetch 失败: %v", err)
 		}
 	case "check":
-		if err := runCheck(*dir); err != nil {
+		if err := runCheck(*dir, *full); err != nil {
 			fail("check 失败: %v", err)
 		}
 	case "publish":
@@ -223,21 +260,35 @@ func runFetch(dir string) error {
 	return nil
 }
 
-func runCheck(dir string) error {
+// runCheck 重跑检测。默认只测到期节点（与 fetch 内部一致，耗时可控）；
+// 传 full=true 才强制全量复检（1.5 万节点需 1 小时以上，慎用）。
+func runCheck(dir string, full bool) error {
 	pool, err := cache.Load(filepath.Join(dir, "pool.json"))
 	if err != nil {
 		return err
 	}
-	pool2 := pool
-	for i := range pool2.Nodes { // 强制全量到期判定：清空 LastChecked 使其全部到期
-		pool2.Nodes[i].LastChecked = ""
+	deep := loadPipeline(dir)
+	target := pool
+	if full {
+		pool2 := pool
+		for i := range pool2.Nodes { // 强制全量到期判定：清空 LastChecked 使其全部到期
+			pool2.Nodes[i].LastChecked = ""
+		}
+		target = pool2
+		logf("check -full: 强制全量复检 %d 个节点", len(pool2.Nodes))
+	} else {
+		logf("check: 仅复检到期节点（如需全量请加 -full）")
 	}
-	results := checkDue(dir, pool2, loadPipeline(dir))
-	a, d, f := cache.ApplyCheck(pool, results, loadPipeline(dir).MaxLatencyMS)
+	results := checkDue(dir, target, deep)
+	if len(results) == 0 {
+		logf("check: 无到期节点，跳过")
+		return nil
+	}
+	a, d, f := cache.ApplyCheck(pool, results, deep.MaxLatencyMS)
 	if err := cache.Save(pool, filepath.Join(dir, "pool.json")); err != nil {
 		return err
 	}
-	logf("粗筛: %d 个，可用 %d / 较差 %d / 连续失败 %d", len(results), a, d, f)
+	logf("检测完成: %d 个，可用 %d / 较差 %d / 连续失败 %d", len(results), a, d, f)
 	_, err = publish.WriteAll(filepath.Join(dir, "published"), pool, cache.Publishable(pool))
 	return err
 }
