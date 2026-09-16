@@ -107,6 +107,93 @@ func (m *Manager) SetFailoverPool(nodes []*model.Node) {
 	m.mu.Unlock()
 }
 
+// SetFailoverPoolLocal 与 SetFailoverPool 相同，但先做本地 TCP 可达性预筛。
+//
+// 为什么必须预筛：云端 CI 跑在海外机房，它测出的"低延迟 21ms 可用节点"在国内
+// 常常完全不可达。实测某个池子前 48 个节点在国内 TCP 可达率为 0%，而随机/中段
+// 采样可达率约 31%-44% —— 即池子头部可能整段是死区。若不预筛，客户端会按
+// 顺序开出前几批全部阵亡，首连耗时被拖到几分钟。
+//
+// 策略：按批扫描（每批 48 个，2.5s 超时），直到收集到 needReachable 个可达节点，
+// 或扫描到 probeCap 上限为止。可达的排前面（保持相对顺序），不可达的沉到末尾
+// 兜底（万一某节点只是瞬间抖动，后续换批仍能轮到它）。
+func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ...any)) {
+	if len(nodes) == 0 {
+		return
+	}
+	const (
+		probeBatch    = 48               // 每批并发探测数
+		needReachable = 3 * batchSize    // 凑够 3 批可用即停（够 failover 用）
+		probeCap      = 480              // 最多扫 480 个，避免极端池子卡住点击
+		probeTimeout  = 2500 * time.Millisecond
+	)
+	type r struct{ idx int; ok bool }
+
+	reach := map[int]bool{} // 已探明的下标 -> 是否可达
+	okN := 0
+	scanned := 0
+	for scanned < len(nodes) && scanned < probeCap && okN < needReachable {
+		end := scanned + probeBatch
+		if end > len(nodes) {
+			end = len(nodes)
+		}
+		if end > probeCap {
+			end = probeCap
+		}
+		cnt := end - scanned
+		ch := make(chan r, cnt)
+		for i := scanned; i < end; i++ {
+			go func(i int) {
+				nd := nodes[i]
+				conn, err := net.DialTimeout("tcp",
+					net.JoinHostPort(nd.Server, strconv.Itoa(nd.Port)), probeTimeout)
+				if err == nil {
+					_ = conn.Close()
+					ch <- r{i, true}
+					return
+				}
+				ch <- r{i, false}
+			}(i)
+		}
+		for i := 0; i < cnt; i++ {
+			v := <-ch
+			reach[v.idx] = v.ok
+			if v.ok {
+				okN++
+			}
+		}
+		scanned = end
+	}
+	if logf != nil {
+		logf("[POOL] 本地预筛：扫描 %d 个候选，TCP 可达 %d 个（不可达的沉到末尾兜底）",
+			scanned, okN)
+	}
+	// 先按健康分排（稳定优先），再把不可达的稳定沉到末尾：
+	// 保证「可达」优先于「不可达」，同等条件下仍按健康分。
+	out := make([]*model.Node, len(nodes))
+	copy(out, nodes)
+	m.tracker.SortByScore(out)
+	dead := map[string]bool{}
+	for i := 0; i < scanned; i++ {
+		if !reach[i] {
+			dead[nodes[i].ID] = true
+		}
+	}
+	reachable := make([]*model.Node, 0, len(out))
+	unreachable := make([]*model.Node, 0, len(out))
+	for _, nd := range out {
+		if dead[nd.ID] {
+			unreachable = append(unreachable, nd)
+		} else {
+			reachable = append(reachable, nd)
+		}
+	}
+	final := append(reachable, unreachable...)
+	m.mu.Lock()
+	m.pool, m.batchIdx = final, 0
+	m.mu.Unlock()
+}
+
 // Snapshot 返回当前状态快照。
 func (m *Manager) Snapshot() map[string]any {
 	m.mu.Lock()

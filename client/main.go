@@ -271,10 +271,10 @@ func (a *app) handleConnect(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "该节点已淘汰，请选择其他节点", 400)
 				return
 			}
-			// 自动换节点候选池：按健康分排序（稳定优先，任务书第七节），
-			// 用户点选的节点在 Connect 中移到组首
+			// 自动换节点候选池：先做本地 TCP 预筛（云端高分节点在国内未必可达），
+			// 再按健康分排序（稳定优先，任务书第七节）。用户点选的节点在 Connect 中移到组首。
 			nodes := cache.Publishable(pool)
-			a.manager.SetFailoverPool(nodes)
+			a.manager.SetFailoverPoolLocal(nodes, a.logf)
 			if err := a.manager.Connect(n, a.logf); err != nil {
 				http.Error(w, err.Error(), 409)
 				return
