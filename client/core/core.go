@@ -36,7 +36,7 @@ const (
 const (
 	probeInterval = 1500 * time.Millisecond
 	probeTimeout  = 25 * time.Second // 单批连接验证上限
-	probeHTTP     = "https://www.gstatic.com/generate_204" // HTTPS 防伪造应答
+	probeHTTP     = "https://www.google.com/generate_204" // 必须直连不可达，否则假阳性
 	batchSize     = 8               // 内核 urltest 组的节点数（任务书第十五章：自动选择最快）
 	failoverMax   = 5               // 整批全灭时最多再换 5 批
 	clashAPIPort  = 9095            // 内核 clash_api，用于查询/切换当前节点
@@ -50,10 +50,13 @@ const (
 
 // probeTargets 多 Probe 目标（任务书第八节）：全部是轻量 204 端点，
 // 任一目标都不作为唯一判断依据。
+//
+// 重要：目标必须"大陆直连不可达"，否则直连就能返回 204，节点即使是死的
+// 也会被判成功（实测 gstatic / cloudflare 国内直连均可达，故剔除）。
 var probeTargets = []string{
-	"https://www.gstatic.com/generate_204",
 	"https://www.google.com/generate_204",
-	"https://cp.cloudflare.com/generate_204",
+	"https://www.youtube.com/generate_204",
+	"https://www.facebook.com/generate_204",
 }
 
 // directTargets 直连探测目标（任务书第十四节）：国内可达轻量 204，
@@ -109,22 +112,22 @@ func (m *Manager) SetFailoverPool(nodes []*model.Node) {
 
 // SetFailoverPoolLocal 与 SetFailoverPool 相同，但先做本地 TCP 可达性预筛。
 //
-// 为什么必须预筛：云端 CI 跑在海外机房，它测出的"低延迟 21ms 可用节点"在国内
-// 常常完全不可达。实测某个池子前 48 个节点在国内 TCP 可达率为 0%，而随机/中段
-// 采样可达率约 31%-44% —— 即池子头部可能整段是死区。若不预筛，客户端会按
-// 顺序开出前几批全部阵亡，首连耗时被拖到几分钟。
+// 为什么必须预筛：云端 CI 跑在海外机房，它测出的"可用节点"在国内常常不可达。
+// 实测某池子 1276 个 AVAILABLE 节点，国内 TCP 可达仅 515 个（40%）；
+// 更极端的是池子头部可能整段是死区（前 48 个 0% 可达）。
+// 若不预筛，客户端会按顺序开出前几批全部阵亡，首连耗时被拖到几分钟。
 //
-// 策略：按批扫描（每批 48 个，2.5s 超时），直到收集到 needReachable 个可达节点，
-// 或扫描到 probeCap 上限为止。可达的排前面（保持相对顺序），不可达的沉到末尾
-// 兜底（万一某节点只是瞬间抖动，后续换批仍能轮到它）。
+// 策略：按批并发扫描，凑够 needReachable 个可达节点即停（够 failover 用），
+// 最多扫 probeCap 个。可达的排前面，不可达的沉到末尾兜底（不丢节点，
+// 万一只是瞬间抖动，后续换批仍能轮到）。
 func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ...any)) {
 	if len(nodes) == 0 {
 		return
 	}
 	const (
-		probeBatch    = 48               // 每批并发探测数
-		needReachable = 3 * batchSize    // 凑够 3 批可用即停（够 failover 用）
-		probeCap      = 480              // 最多扫 480 个，避免极端池子卡住点击
+		probeBatch    = 64               // 每批并发探测数
+		needReachable = 4 * batchSize    // 凑够 4 批可用即停（够 failover 用）
+		probeCap      = 1600             // 上限（覆盖常见可用池规模，约 40 秒）
 		probeTimeout  = 2500 * time.Millisecond
 	)
 	type r struct{ idx int; ok bool }

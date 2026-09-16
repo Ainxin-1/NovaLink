@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,9 +21,30 @@ import (
 	"novanode/publish"
 )
 
-// 探测必须用 HTTPS：明文 HTTP 会被大陆出口/伪造节点本地应答欺骗，
-// HTTPS 需要真实完成到目标站的 TLS 握手，伪造不了。
-const probeURL = "https://www.gstatic.com/generate_204"
+// 探测目标必须同时满足两个条件：
+//
+//  1. HTTPS —— 明文 HTTP 会被大陆出口/伪造节点本地应答欺骗，HTTPS 需要真实
+//     完成到目标站的 TLS 握手，伪造不了。
+//  2. 运行环境直连不可达 —— 否则"直连就能返回 204"，节点即使是死的也会被判可用。
+//
+// 实测（2026-09-16，国内家宽）：
+//
+//	https://www.gstatic.com/generate_204  直连 204（0.3s）  ← 不能用，会全判可用
+//	https://www.google.com/generate_204   直连超时          ← 国内环境正确目标
+//
+// 注意运行环境差异：CI 跑在 GitHub 海外机房，google 在那里直连可达，
+// 单靠 google 会重新陷入假阳性。因此允许用 NOVANODE_PROBE_URL 覆盖，
+// 由运行方按所处网络环境选择"该环境直连不可达"的目标
+// （CI 侧见 .github/workflows/node-pipeline.yml，用 youtube 等被墙目标）。
+const defaultProbeURL = "https://www.google.com/generate_204"
+
+// ProbeURL 返回当前生效的探测目标（可用环境变量覆盖，便于跨网络环境部署）。
+func ProbeURL() string {
+	if v := strings.TrimSpace(os.Getenv("NOVANODE_PROBE_URL")); v != "" {
+		return v
+	}
+	return defaultProbeURL
+}
 
 // Deep 对 nodes 做协议级检测：按 chunkSize 分批，每批生成一个
 // 多入站/多出站的 sing-box 配置（入站 i 固定路由到出站 i），
@@ -162,7 +184,7 @@ func tryChunk(batch int, chunk []model.Node, singboxPath string, basePort int, w
 				}},
 			}
 			t0 := time.Now()
-			resp, err := cl.Get(probeURL)
+			resp, err := cl.Get(ProbeURL())
 			lat := int(time.Since(t0).Milliseconds())
 			mu.Lock()
 			defer mu.Unlock()

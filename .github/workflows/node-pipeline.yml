@@ -42,7 +42,12 @@ jobs:
         env:
           SINGBOX: ${{ github.workspace }}/sing-box
         run: |
-          # 先把 CI 专用的核心路径写入配置，再一次性跑完整管线。
+          # CI 的职责边界（重要）：
+          #   能验证 —— 节点本身活着：TCP 可达、协议握手成功、能取回外网内容。
+          #   不能验证 —— 国内能否翻墙：海外机房到任何目标都通，
+          #              探测目标在 CI 环境下天然"直连可达"，判别力为零。
+          # 因此真实可用性必须由国内客户端把关（本地 TCP 预筛 + 设备端检测）。
+          # 探测目标的选择规则见 node/checker/deep.go，可用 NOVANODE_PROBE_URL 覆盖。
           python3 - <<'EOF'
           import json,pathlib
           p=pathlib.Path("data/pipeline.json")

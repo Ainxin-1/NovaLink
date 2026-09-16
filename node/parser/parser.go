@@ -145,6 +145,39 @@ func badServer(server string) bool {
 	return false
 }
 
+// badWSPath 识别上游 URI 拼接残留造成的畸形 WebSocket 路径。
+//
+// 典型样本（真实数据）：
+//
+//	path=/?ed=2560security=tls        ← 漏了 "&"，security 参数被粘进前一个值
+//	path=/?ed=2048type=ws
+//
+// 判据：在 query 段的**值**里发现了另一个已知参数名（或其 "=" 形式），
+// 说明上游拼接时缺少分隔符。正常路径（如 /?ed=2560&foo=bar）不会触发。
+func badWSPath(path string) bool {
+	i := strings.IndexByte(path, '?')
+	if i < 0 {
+		// 没有 query 段：整体形如 "xxx=yyy" 且不以 / 开头，属于拼接残留
+		return strings.Contains(path, "=") && !strings.HasPrefix(path, "/")
+	}
+	// 已知参数名 —— 出现在值里即为拼接残留
+	keys := []string{"security=", "type=", "host=", "path=", "sni=", "fp=",
+		"alpn=", "headertype=", "allowinsecure=", "encryption=", "flow="}
+	for _, part := range strings.Split(path[i+1:], "&") {
+		j := strings.IndexByte(part, '=')
+		if j < 0 {
+			continue
+		}
+		val := strings.ToLower(part[j+1:])
+		for _, k := range keys {
+			if strings.Contains(val, k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func parseSS(uri string) (model.Node, error) {
 	main := strings.TrimPrefix(uri, "ss://")
 	main = strings.SplitN(main, "#", 2)[0]
@@ -250,6 +283,11 @@ func parseTrojanLike(uri, proto string) (model.Node, error) {
 	if params["net"] == "ws" && params["path"] != "" {
 		if _, err := url.Parse(params["path"]); err != nil {
 			return model.Node{}, fmt.Errorf("invalid ws path")
+		}
+		// 上游 URI 拼接残留：形如 /?ed=2560security=tls —— 作者漏了 &，
+		// 把下一个参数粘进了 path。服务端不会认这个路径，节点必然失败，直接丢弃。
+		if badWSPath(params["path"]) {
+			return model.Node{}, fmt.Errorf("malformed ws path (upstream missing separator)")
 		}
 	}
 	if proto == "vless" {

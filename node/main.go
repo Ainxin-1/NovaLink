@@ -164,6 +164,7 @@ func countOK(m map[string]checker.Result) int {
 func main() {
 	dir := flag.String("dir", "data", "工作目录（sources.json/pool.json/published）")
 	full := flag.Bool("full", false, "check 时强制全量复检（默认只测到期节点）")
+	ft := flag.Int("filter-timeout", 3, "filter 时单节点 TCP 探测超时（秒）")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		usage()
@@ -173,6 +174,10 @@ func main() {
 		fail("创建工作目录失败: %v", err)
 	}
 	cmd := flag.Arg(0)
+	filterTimeout := time.Duration(*ft) * time.Second
+	if filterTimeout <= 0 {
+		filterTimeout = 3 * time.Second
+	}
 	switch cmd {
 	case "fetch":
 		if err := runFetch(*dir); err != nil {
@@ -189,6 +194,10 @@ func main() {
 	case "prune":
 		if err := runPrune(*dir); err != nil {
 			fail("prune 失败: %v", err)
+		}
+	case "filter":
+		if err := runFilter(*dir, filterTimeout); err != nil {
+			fail("filter 失败: %v", err)
 		}
 	case "status":
 		if err := runStatus(*dir); err != nil {
@@ -299,6 +308,61 @@ func runCheck(dir string, full bool) error {
 	logf("检测完成: %d 个，可用 %d / 较差 %d / 连续失败 %d", len(results), a, d, f)
 	_, err = publish.WriteAll(filepath.Join(dir, "published"), pool, cache.Publishable(pool))
 	return err
+}
+
+// runFilter 在【本机】对可用节点做一轮 TCP 可达性筛选，把连不上的降级为 DEGRADED
+// 并重新发布。用途：CI 跑在海外，它标为 AVAILABLE 的节点在国内可能大面积不可达
+// （实测 1276 个中仅 515 个可连，约 40%）。在本机跑一次 filter，就能产出
+// 「国内真能连上」的订阅列表。
+//
+// 注意：只降级、不删除，也不改 LastSuccess 等检测历史 —— 这只是本地视角的补充判定。
+func runFilter(dir string, timeout time.Duration) error {
+	poolPath := filepath.Join(dir, "pool.json")
+	pool, err := cache.Load(poolPath)
+	if err != nil {
+		return err
+	}
+	targets := []model.Node{}
+	for _, n := range pool.Nodes {
+		if n.State == model.StateAvailable {
+			targets = append(targets, *n)
+		}
+	}
+	if len(targets) == 0 {
+		logf("filter: 没有 AVAILABLE 节点需要筛选")
+		return nil
+	}
+	logf("filter: 本机 TCP 探测 %d 个 AVAILABLE 节点（超时 %s）", len(targets), timeout)
+	t0 := time.Now()
+	res := checker.TCP(targets, timeout, 256)
+	reach, dead := 0, 0
+	for _, n := range pool.Nodes {
+		if n.State != model.StateAvailable {
+			continue
+		}
+		r, ok := res[n.ID]
+		if !ok {
+			continue
+		}
+		if r.OK {
+			reach++
+			continue
+		}
+		n.State = model.StateDegraded // 本机连不上 -> 降级，不再占发布位
+		n.FailCount++
+		dead++
+	}
+	logf("filter: 可达 %d / 不可达 %d（耗时 %s），已把不可达的降级",
+		reach, dead, time.Since(t0).Round(time.Second))
+	if err := cache.Save(pool, poolPath); err != nil {
+		return err
+	}
+	n, err := publish.WriteAll(filepath.Join(dir, "published"), pool, cache.Publishable(pool))
+	if err != nil {
+		return err
+	}
+	logf("filter: 重新发布 %d 个节点", n)
+	return nil
 }
 
 // runPrune 清理历史积压的僵尸节点并重新发布。
@@ -422,10 +486,11 @@ func fail(format string, args ...any) {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "用法: novanode <fetch|check|publish|prune|status> [-dir 工作目录]")
+	fmt.Fprintln(os.Stderr, "用法: novanode <fetch|check|publish|prune|filter|status> [-dir 工作目录]")
 	fmt.Fprintln(os.Stderr, "  fetch   一轮完整流程（抓取→解析→去重→检测→清理→发布）")
 	fmt.Fprintln(os.Stderr, "  check   复检到期节点；加 -full 强制全量")
 	fmt.Fprintln(os.Stderr, "  publish 仅重新生成发布文件")
 	fmt.Fprintln(os.Stderr, "  prune   清理从未成功过的僵尸节点并重新发布")
+	fmt.Fprintln(os.Stderr, "  filter  本机 TCP 探测可用节点，把连不上的降级后重新发布")
 	fmt.Fprintln(os.Stderr, "  status  打印节点池统计")
 }
