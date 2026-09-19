@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"novanode/cache"
@@ -32,12 +33,13 @@ const checkInterval = 6 * time.Hour // 粗筛最小间隔
 
 // pipelineCfg 管线运行参数（data/pipeline.json，缺省自动生成）。
 type pipelineCfg struct {
-	SingBoxPath  string `json:"singbox_path"`  // 提供则启用协议级深度检测
+	SingBoxPath  string `json:"singbox_path"` // 提供则启用协议级深度检测
 	Deep         bool   `json:"deep"`
 	ChunkSize    int    `json:"chunk_size"`
 	BasePort     int    `json:"base_port"`
 	MaxLatencyMS int    `json:"max_latency_ms"` // 可用线：超过则降级，连续2轮超线判死
 	MaxDeep      int    `json:"max_deep"`       // 单轮深检上限（0=不限）；深检单批约 1 分钟，需控总时长
+	MaxPool      int    `json:"max_pool"`       // 池子规模上限（0=不限）；超出按价值淘汰，防 pool.json 失控
 }
 
 func loadPipeline(dir string) pipelineCfg {
@@ -45,6 +47,7 @@ func loadPipeline(dir string) pipelineCfg {
 		SingBoxPath: "E:/NovaLink/core/vpn-core/sing-box-1.14.0-windows-amd64/sing-box.exe",
 		Deep:        true, ChunkSize: 64, BasePort: 30000, MaxLatencyMS: 800,
 		MaxDeep: 6000, // 云端源可达 1.5 万节点，限 6000 个可使单轮深检约 100 分钟可控
+		MaxPool: 15000, // 实测一轮来源就能进 4.4 万候选；1.5 万约 18MB，仍可接受
 	}
 	b, err := os.ReadFile(filepath.Join(dir, "pipeline.json"))
 	if err != nil {
@@ -161,7 +164,33 @@ func countOK(m map[string]checker.Result) int {
 	return c
 }
 
+// flagTakesValue 需要跟一个独立取值的选项（bool 型不在此列）。
+var flagTakesValue = map[string]bool{"-dir": true, "-filter-timeout": true}
+
+// reorderArgs 把选项挪到子命令之前。
+//
+// Go 的 flag 包遇到第一个非选项参数就停止解析，而 README、CI 与习惯用法都是
+// `novanode fetch -dir data` 这种"子命令在前"。实测后果：-dir 被静默忽略，
+// 整轮结果写进默认 data/ 而不是指定目录（本地复验时踩过一次）。
+func reorderArgs(args []string) []string {
+	flags, pos := []string{}, []string{}
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if strings.HasPrefix(a, "-") && a != "-" {
+			flags = append(flags, a)
+			if flagTakesValue[a] && !strings.Contains(a, "=") && i+1 < len(args) {
+				i++
+				flags = append(flags, args[i])
+			}
+			continue
+		}
+		pos = append(pos, a)
+	}
+	return append(flags, pos...)
+}
+
 func main() {
+	os.Args = append([]string{os.Args[0]}, reorderArgs(os.Args[1:])...)
 	dir := flag.String("dir", "data", "工作目录（sources.json/pool.json/published）")
 	full := flag.Bool("full", false, "check 时强制全量复检（默认只测到期节点）")
 	ft := flag.Int("filter-timeout", 3, "filter 时单节点 TCP 探测超时（秒）")
@@ -263,6 +292,11 @@ func runFetch(dir string) error {
 	expired, removed := cache.Age(pool, seen)
 	if expired+removed > 0 {
 		logf("过期清理: EXPIRED %d，移出 %d，池内剩余 %d", expired, removed, len(pool.Nodes))
+	}
+	// 7b. 池子封顶：一次全量来源就能吐出 4.4 万候选，而 pool.json 是
+	// 全量提交进 git 并被客户端整个下载解析的，不封顶会每两小时膨胀一次。
+	if dropped := cache.Cap(pool, deep.MaxPool); dropped > 0 {
+		logf("池子封顶: 淘汰 %d 个（上限 %d），池内剩余 %d", dropped, deep.MaxPool, len(pool.Nodes))
 	}
 
 	// 8. 保存 + 发布

@@ -51,6 +51,11 @@ func ParseLines(text string) (nodes []model.Node, dropped int) {
 }
 
 // ParseURI 解析单条节点 URI。
+//
+// 支持范围即本管线能发布出去的范围。早先只认 ss/trojan/vless/vmess 四类，
+// hysteria2/tuic/anytls 整类被当作"非法行"丢弃 —— 而 2026-09-19 国内实测中
+// 活下来的 18 个节点里 15 个是裸 IP + 随机高端口，正是这一类跑在独立服务器上
+// 的 QUIC 节点。丢协议等于丢供给。
 func ParseURI(uri string) (model.Node, error) {
 	switch {
 	case strings.HasPrefix(uri, "ss://"):
@@ -61,9 +66,85 @@ func ParseURI(uri string) (model.Node, error) {
 		return parseTrojanLike(uri, "vless")
 	case strings.HasPrefix(uri, "vmess://"):
 		return parseVmess(uri)
+	case strings.HasPrefix(uri, "hysteria2://"), strings.HasPrefix(uri, "hy2://"):
+		return parseHysteria2(uri)
+	case strings.HasPrefix(uri, "tuic://"):
+		return parseTuic(uri)
+	case strings.HasPrefix(uri, "anytls://"):
+		return parseAnyTLS(uri)
 	default:
 		return model.Node{}, fmt.Errorf("unsupported scheme")
 	}
+}
+
+// uriParts 是 scheme://凭据@host:port?query#name 形态 URI 的切分结果。
+type uriParts struct {
+	raw    string // 原始 URI，作为节点参数随池子保存
+	cred   string
+	server string
+	port   int
+	query  string
+	frag   string
+}
+
+// splitCredURI 切分凭据型 URI，vless/trojan/hysteria2/tuic/anytls 共用。
+func splitCredURI(uri string) (uriParts, error) {
+	i := strings.Index(uri, "://")
+	if i < 0 {
+		return uriParts{}, fmt.Errorf("no scheme")
+	}
+	rest := uri[i+3:]
+	p := uriParts{raw: uri}
+	if j := strings.IndexByte(rest, '#'); j >= 0 {
+		p.frag, rest = rest[j+1:], rest[:j]
+	}
+	if j := strings.IndexByte(rest, '?'); j >= 0 {
+		p.query, rest = rest[j+1:], rest[:j]
+	}
+	// host:port 后可能跟一个空 path（hy2://pw@1.1.1.1:443/?insecure=1#n）
+	rest = strings.TrimSuffix(rest, "/")
+	k := strings.LastIndexByte(rest, '@')
+	if k < 0 {
+		return uriParts{}, fmt.Errorf("no userinfo")
+	}
+	p.cred = rest[:k]
+	server, port, err := hostport(rest[k+1:])
+	if err != nil {
+		return uriParts{}, err
+	}
+	if badServer(server) {
+		return uriParts{}, fmt.Errorf("reserved server address")
+	}
+	p.server, p.port = server, port
+	return p, nil
+}
+
+func unescape(s string) string {
+	if v, err := url.QueryUnescape(s); err == nil {
+		return v
+	}
+	return s
+}
+
+// tlsParams 收齐 TLS 相关参数。早先只取 sni/path/host/flow/pbk/sid，
+// fp（uTLS 指纹）、alpn、insecure 直接丢掉，导致部分节点在客户端配不出来。
+func tlsParams(p uriParts) map[string]string {
+	m := map[string]string{"uri": p.raw}
+	sni := qget(p.query, "sni")
+	if sni == "" {
+		sni = qget(p.query, "peer") // hysteria2 常用 peer 表示 SNI
+	}
+	if sni == "" {
+		sni = qget(p.query, "host")
+	}
+	m["sni"] = sni
+	m["alpn"] = qget(p.query, "alpn")
+	m["fp"] = qget(p.query, "fp")
+	if qget(p.query, "insecure") == "1" || qget(p.query, "allow_insecure") == "1" ||
+		qget(p.query, "allowinsecure") == "true" {
+		m["insecure"] = "1"
+	}
+	return m
 }
 
 // decodeB64 解码 URL-safe / 标准 base64，自动补齐 padding。
@@ -220,61 +301,42 @@ func parseSS(uri string) (model.Node, error) {
 	name, _ := url.QueryUnescape(fragment(uri))
 	params := map[string]string{"uri": uri, "method": method, "password": password}
 	return model.Node{
-		ID: model.Fingerprint("ss", server, port, params),
+		ID:   model.Fingerprint("ss", server, port, params),
 		Name: name, Protocol: "ss", Server: server, Port: port, Params: params,
 	}, nil
 }
 
 // trojan / vless 共用 URI 形态: scheme://凭据@host:port?query#name
 func parseTrojanLike(uri, proto string) (model.Node, error) {
-	main := strings.TrimPrefix(uri, proto+"://")
-	var frag string
-	if i := strings.IndexByte(main, '#'); i >= 0 {
-		frag = main[i+1:]
-		main = main[:i]
-	}
-	var query string
-	if i := strings.IndexByte(main, '?'); i >= 0 {
-		query = main[i+1:]
-		main = main[:i]
-	}
-	i := strings.LastIndexByte(main, '@')
-	if i < 0 {
-		return model.Node{}, fmt.Errorf("no userinfo")
-	}
-	cred := main[:i]
-	server, port, err := hostport(main[i+1:])
+	p, err := splitCredURI(uri)
 	if err != nil {
 		return model.Node{}, err
 	}
-	if badServer(server) {
-		return model.Node{}, fmt.Errorf("reserved server address")
-	}
-	password, err := url.QueryUnescape(cred)
-	if err != nil {
-		password = cred
-	}
-	if password == "" {
+	cred := unescape(p.cred)
+	if cred == "" {
 		return model.Node{}, fmt.Errorf("empty credential")
 	}
-	net := qget(query, "type")
-	if net == "" {
+	net := qget(p.query, "type")
+	if net == "" || net == "raw" {
 		net = "tcp"
 	}
-	if net != "tcp" && net != "ws" && net != "grpc" {
+	if net == "h2" {
+		net = "http" // sing-box 1.11 起 h2 传输更名为 http
+	}
+	if net != "tcp" && net != "ws" && net != "grpc" && net != "http" {
 		return model.Node{}, fmt.Errorf("unsupported transport %s", net)
 	}
-	sec := qget(query, "security")
-	sni := qget(query, "sni")
-	if sni == "" {
-		sni = qget(query, "host")
-	}
-	params := map[string]string{
-		"uri": uri, "password": password, "net": net,
-		"sni": sni, "path": qget(query, "path"), "host": qget(query, "host"),
-		"flow": qget(query, "flow"), "pbk": qget(query, "pbk"), "sid": qget(query, "sid"),
-	}
-	if sec == "tls" || sec == "reality" || net == "tls" {
+	sec := qget(p.query, "security")
+	params := tlsParams(p)
+	params["password"] = cred
+	params["net"] = net
+	params["path"] = qget(p.query, "path")
+	params["host"] = qget(p.query, "host")
+	params["flow"] = qget(p.query, "flow")
+	params["pbk"] = qget(p.query, "pbk")
+	params["sid"] = qget(p.query, "sid")
+	params["spx"] = qget(p.query, "spx") // reality spiderX，原先丢失
+	if sec == "tls" || sec == "reality" {
 		params["security"] = sec
 	}
 	if pbk := params["pbk"]; pbk != "" && !model.ValidPublicKey(pbk) {
@@ -291,17 +353,94 @@ func parseTrojanLike(uri, proto string) (model.Node, error) {
 		}
 	}
 	if proto == "vless" {
-		params["uuid"] = password
+		params["uuid"] = cred
 	}
-	name, _ := url.QueryUnescape(frag)
 	return model.Node{
-		ID: model.Fingerprint(proto, server, port, params),
-		Name: name, Protocol: proto, Server: server, Port: port, Params: params,
+		ID:   model.Fingerprint(proto, p.server, p.port, params),
+		Name: unescape(p.frag), Protocol: proto, Server: p.server, Port: p.port, Params: params,
 	}, nil
 }
 
+func newNode(proto string, p uriParts, params map[string]string) model.Node {
+	return model.Node{
+		ID:   model.Fingerprint(proto, p.server, p.port, params),
+		Name: unescape(p.frag), Protocol: proto, Server: p.server, Port: p.port, Params: params,
+	}
+}
+
+func orDefault(v, def string) string {
+	if v == "" {
+		return def
+	}
+	return v
+}
+
+// parseHysteria2 解析 hysteria2://（别名 hy2://）。QUIC/UDP 上的独立服务器节点，
+// 不依赖 Cloudflare CDN —— 国内实测里唯一还有活口的免费节点类别。
+func parseHysteria2(uri string) (model.Node, error) {
+	p, err := splitCredURI(uri)
+	if err != nil {
+		return model.Node{}, err
+	}
+	pw := unescape(p.cred)
+	if pw == "" {
+		return model.Node{}, fmt.Errorf("empty credential")
+	}
+	params := tlsParams(p)
+	params["password"] = pw
+	if obfs := qget(p.query, "obfs"); obfs != "" && obfs != "none" {
+		params["obfs"] = obfs
+		params["obfs_password"] = qget(p.query, "obfs-password")
+	}
+	return newNode("hysteria2", p, params), nil
+}
+
+// parseTuic 解析 tuic://（凭据为 uuid:password 两段）。
+func parseTuic(uri string) (model.Node, error) {
+	p, err := splitCredURI(uri)
+	if err != nil {
+		return model.Node{}, err
+	}
+	i := strings.IndexByte(p.cred, ':')
+	if i <= 0 || i == len(p.cred)-1 {
+		return model.Node{}, fmt.Errorf("bad tuic credential")
+	}
+	params := tlsParams(p)
+	params["uuid"] = unescape(p.cred[:i])
+	params["password"] = unescape(p.cred[i+1:])
+	params["congestion_control"] = orDefault(qget(p.query, "congestion_control"), "bbr")
+	params["udp_relay_mode"] = orDefault(qget(p.query, "udp_relay_mode"), "native")
+	return newNode("tuic", p, params), nil
+}
+
+// parseAnyTLS 解析 anytls://。TCP+TLS，靠 sni 完成握手。
+func parseAnyTLS(uri string) (model.Node, error) {
+	p, err := splitCredURI(uri)
+	if err != nil {
+		return model.Node{}, err
+	}
+	pw := unescape(p.cred)
+	if pw == "" {
+		return model.Node{}, fmt.Errorf("empty credential")
+	}
+	params := tlsParams(p)
+	params["password"] = pw
+	if obfs := qget(p.query, "obfs"); obfs != "" && obfs != "none" {
+		params["obfs"] = obfs
+		params["obfs_password"] = qget(p.query, "obfs-password")
+	}
+	return newNode("anytls", p, params), nil
+}
+
 func parseVmess(uri string) (model.Node, error) {
-	dec, err := decodeB64(strings.TrimPrefix(uri, "vmess://"))
+	// 订阅里 vmess 普遍带 #名称 后缀，必须先剥掉再解 base64，
+	// 否则 StdEncoding 会在 '#' 处报 illegal base64 —— 整条节点被丢弃。
+	body := strings.TrimPrefix(uri, "vmess://")
+	frag := ""
+	if i := strings.IndexByte(body, '#'); i >= 0 {
+		frag, body = body[i+1:], body[:i]
+	}
+	dec, err := decodeB64(body)
 	if err != nil {
 		return model.Node{}, err
 	}
@@ -325,10 +464,13 @@ func parseVmess(uri string) (model.Node, error) {
 		return model.Node{}, fmt.Errorf("empty vmess uuid")
 	}
 	net := get("net")
-	if net == "" {
+	if net == "" || net == "raw" {
 		net = "tcp"
 	}
-	if net != "tcp" && net != "ws" && net != "grpc" {
+	if net == "h2" {
+		net = "http"
+	}
+	if net != "tcp" && net != "ws" && net != "grpc" && net != "http" {
 		return model.Node{}, fmt.Errorf("unsupported transport %s", net)
 	}
 	sni := get("sni")
@@ -339,6 +481,10 @@ func parseVmess(uri string) (model.Node, error) {
 		"uri": uri, "uuid": id, "net": net, "sni": sni,
 		"path": get("path"), "host": get("host"),
 		"aid": get("aid"), "security": get("scy"), "tls": get("tls"),
+		"fp": get("fp"), "alpn": get("alpn"),
+	}
+	if get("insecure") == "1" || get("allowInsecure") == "1" {
+		params["insecure"] = "1"
 	}
 	if net == "ws" && params["path"] != "" {
 		if _, err := url.Parse(params["path"]); err != nil {
@@ -346,8 +492,9 @@ func parseVmess(uri string) (model.Node, error) {
 		}
 	}
 	return model.Node{
-		ID: model.Fingerprint("vmess", server, port, params),
-		Name: get("ps"), Protocol: "vmess", Server: server, Port: port, Params: params,
+		ID:       model.Fingerprint("vmess", server, port, params),
+		Name:     orDefault(get("ps"), unescape(frag)),
+		Protocol: "vmess", Server: server, Port: port, Params: params,
 	}, nil
 }
 

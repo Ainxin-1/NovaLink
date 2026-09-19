@@ -110,7 +110,7 @@ func extractSubscriptionURLs(text string, cap int) []string {
 		l := strings.ToLower(u)
 		switch {
 		case strings.Contains(l, "/blob/"), // GitHub 网页页签，非原始文件
-			strings.HasSuffix(l, "/"),        // 目录/首页
+			strings.HasSuffix(l, "/"), // 目录/首页
 			strings.Count(strings.TrimPrefix(strings.TrimPrefix(l, "https://"), "http://"), "/") < 1: // 纯域名
 			continue
 		}

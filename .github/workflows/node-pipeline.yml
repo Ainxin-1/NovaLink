@@ -64,6 +64,7 @@ jobs:
           c.setdefault("base_port", 30000)
           c.setdefault("max_latency_ms", 800)
           c.setdefault("max_deep", 6000)
+          c.setdefault("max_pool", 15000)
           p.write_text(json.dumps(c,indent=2))
           EOF
           # fetch 一条命令即完成全流程（含检测与发布），无需再跑 check。

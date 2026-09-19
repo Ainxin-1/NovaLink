@@ -140,6 +140,46 @@ func Age(p *model.Pool, seen map[string]bool) (expired, removed int) {
 	return expired, removed
 }
 
+// Cap 把池子规模压到 maxNodes 以内，返回被移出的节点数。
+//
+// 为什么必须压：来源一次全量就能吐出 4.4 万个候选（2026-09-19 实测），
+// 而池子是全量提交进 git 并被客户端整个下载解析的 —— 不封顶的话
+// pool.json 每两小时膨胀一次，仓库与客户端都会被拖死。
+//
+// 淘汰顺序按"这台机器上还能不能指望它"：国内实测通过率约 0.05% 且
+// 各协议/各 IP 段没有显著差别，所以价值只体现在**有没有成功记录**与
+// **有多新**上，而不是协议或来源。
+func Cap(p *model.Pool, maxNodes int) int {
+	if maxNodes <= 0 || len(p.Nodes) <= maxNodes {
+		return 0
+	}
+	score := func(n *model.Node) int {
+		switch {
+		case n.State == model.StateAvailable || n.State == model.StateDegraded || n.State == model.StateTesting:
+			return 4 // 验证过的资产，最后才动
+		case n.LastSuccess != "":
+			return 3 // 历史上成功过，值得再试
+		case n.State == model.StateNew:
+			return 2 // 新面孔：免费节点时效性强，保留
+		case n.State == model.StateFailed:
+			return 1 // 连续失败
+		default:
+			return 0 // EXPIRED / REMOVED
+		}
+	}
+	sort.SliceStable(p.Nodes, func(i, j int) bool {
+		si, sj := score(p.Nodes[i]), score(p.Nodes[j])
+		if si != sj {
+			return si > sj
+		}
+		// 同档内取更新的（first_seen 大 = 更可能还活着）
+		return p.Nodes[i].FirstSeen > p.Nodes[j].FirstSeen
+	})
+	dropped := len(p.Nodes) - maxNodes
+	p.Nodes = p.Nodes[:maxNodes]
+	return dropped
+}
+
 // deadTooLong 判断 FAILED 节点是否已持续太久没有任何成功记录。
 func deadTooLong(n *model.Node, nowT time.Time) bool {
 	ref := n.LastSuccess

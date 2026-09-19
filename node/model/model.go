@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"sort"
 	"strconv"
 )
 
@@ -41,8 +42,8 @@ type Node struct {
 
 // Pool 是节点池的持久化形态（任务书第十一章/第十六章缓存）。
 type Pool struct {
-	Updated string   `json:"updated"`
-	Nodes   []*Node  `json:"nodes"`
+	Updated string  `json:"updated"`
+	Nodes   []*Node `json:"nodes"`
 }
 
 // SourceConfig 是节点来源配置（任务书第八章）。
@@ -83,8 +84,18 @@ func Fingerprint(protocol, server string, port int, keyParams map[string]string)
 	w(protocol)
 	w(server)
 	w(strconv.Itoa(port))
-	// 关键参数按固定顺序参与指纹，保证同一节点多来源指纹一致
-	for _, k := range []string{"method", "password", "uuid", "sni", "pbk", "sid", "net", "path", "host", "flow"} {
+	// 参数按 key 排序后全量参与指纹（"uri" 除外，它带着来源自己的 #名称）。
+	// 原先是硬编码参数名白名单：每加一种协议都得记得回来加 key，漏了就会撞指纹
+	// —— 例如同 host:port:password 但 obfs 不同的两个 hysteria2 节点会被并成一个。
+	keys := make([]string, 0, len(keyParams))
+	for k := range keyParams {
+		if k != "uri" {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		w(k)
 		w(keyParams[k])
 	}
 	return hex.EncodeToString(h.Sum(nil))[:16]

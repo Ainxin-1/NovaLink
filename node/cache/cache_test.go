@@ -64,9 +64,9 @@ func TestProvenNodeToleratesMore(t *testing.T) {
 // 僵尸节点应被 prune 清除；从未成功但失败次数未达上限的节点要保留（还在观察期）。
 func TestPruneZombies(t *testing.T) {
 	p := &model.Pool{Nodes: []*model.Node{
-		mkNode("zombie1", model.StateNew, NewFailLimit, ""),     // 僵尸：从未成功 + 失败到上限
+		mkNode("zombie1", model.StateNew, NewFailLimit, ""),      // 僵尸：从未成功 + 失败到上限
 		mkNode("zombie2", model.StateFailed, NewFailLimit+5, ""), // 僵尸：同上
-		mkNode("watch", model.StateNew, 1, ""),                  // 观察期：只失败 1 次
+		mkNode("watch", model.StateNew, 1, ""),                   // 观察期：只失败 1 次
 		mkNode("good", model.StateAvailable, 0, time.Now().UTC().Format(time.RFC3339)),
 	}}
 	if got := ZombieCount(p); got != 2 {
@@ -96,9 +96,9 @@ func TestPublishableRejectsUnproven(t *testing.T) {
 	nowS := time.Now().UTC().Format(time.RFC3339)
 	p := &model.Pool{Nodes: []*model.Node{
 		mkNode("avail", model.StateAvailable, 0, nowS),
-		mkNode("unproven", model.StateNew, 0, ""),  // 从未成功 -> 不发布
-		mkNode("proven", model.StateNew, 0, nowS),  // 成功过 -> 可发布
-		mkNode("dead", model.StateFailed, 3, ""),   // FAILED -> 不发布
+		mkNode("unproven", model.StateNew, 0, ""), // 从未成功 -> 不发布
+		mkNode("proven", model.StateNew, 0, nowS), // 成功过 -> 可发布
+		mkNode("dead", model.StateFailed, 3, ""),  // FAILED -> 不发布
 	}}
 	got := Publishable(p)
 	ids := map[string]bool{}
