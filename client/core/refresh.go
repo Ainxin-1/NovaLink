@@ -2,10 +2,10 @@
 //
 // 管线在 GitHub Actions 每 2 小时发布最新节点池，客户端通过本模块拉取：
 //
-//	1) jsDelivr（先 purge 缓存保证新鲜）
-//	2) raw.githubusercontent（直连，常被墙但作为备选）
-//	3) 上述两源经本机 socks5 127.0.0.1:10808 代理重试（如端口开放）
-//	4) 全部失败保持本地文件不动
+//  1. jsDelivr（先 purge 缓存保证新鲜）
+//  2. raw.githubusercontent（直连，常被墙但作为备选）
+//  3. 上述两源经本机 socks5 127.0.0.1:10808 代理重试（如端口开放）
+//  4. 全部失败保持本地文件不动
 //
 // 拉取结果仅在"云端比本地新"时原子覆盖本地 pool.json。
 package core
@@ -41,7 +41,7 @@ type fetchSource struct {
 // RefreshPool 拉取云端节点池并按新旧覆盖本地文件。
 // 返回命中的来源名与池内节点总数。
 func (m *Manager) RefreshPool(logf func(string, ...any)) (source string, total int, err error) {
-	url := m.settings.PoolURL
+	url := m.set().PoolURL
 	if url == "" {
 		url = DefaultPoolURL
 	}
@@ -59,7 +59,7 @@ func (m *Manager) RefreshPool(logf func(string, ...any)) (source string, total i
 		)
 	}
 
-	local, lerr := cache.Load(m.settings.PoolPath)
+	local, lerr := cache.Load(m.set().PoolPath)
 	for _, s := range sources {
 		pool, ferr := fetchPool(s)
 		if ferr != nil {
@@ -73,7 +73,7 @@ func (m *Manager) RefreshPool(logf func(string, ...any)) (source string, total i
 			logf("[POOL] 云端(%s)更新时间 %s 不晚于本地 %s，无需刷新", s.name, pool.Updated, local.Updated)
 			return s.name + "(已是最新)", len(local.Nodes), nil
 		}
-		if serr := cache.Save(pool, m.settings.PoolPath); serr != nil {
+		if serr := cache.Save(pool, m.set().PoolPath); serr != nil {
 			return s.name, total, fmt.Errorf("保存节点池失败: %w", serr)
 		}
 		logf("[POOL] 已从 %s 更新节点池：%d 个节点（池更新时间 %s）", s.name, total, pool.Updated)
@@ -81,6 +81,7 @@ func (m *Manager) RefreshPool(logf func(string, ...any)) (source string, total i
 	}
 	return "", 0, fmt.Errorf("所有订阅源均不可达，保留本地节点池")
 }
+
 // PoolStale 本地节点池是否已过期（文件缺失/损坏/更新时间超过 maxAge）。
 func PoolStale(path string, maxAge time.Duration) bool {
 	pool, err := cache.Load(path)

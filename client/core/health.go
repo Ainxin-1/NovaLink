@@ -21,24 +21,24 @@ import (
 // NodeHealth 单节点运行时健康统计（任务书第四节字段定义）。
 type NodeHealth struct {
 	ID                 string    `json:"id"`
-	SuccessCount       int       `json:"success_count"`        // 总成功次数
-	FailureCount       int       `json:"failure_count"`        // 总失败次数
-	ConsecutiveSuccess int       `json:"consecutive_success"`  // 连续成功次数
-	ConsecutiveFailure int       `json:"consecutive_failure"`  // 连续失败次数
-	AvgLatency         float64   `json:"avg_latency_ms"`       // 平均延迟（EWMA）
-	LatencyJitter      float64   `json:"latency_jitter_ms"`    // 延迟波动（EWMA |Δ|）
+	SuccessCount       int       `json:"success_count"`       // 总成功次数
+	FailureCount       int       `json:"failure_count"`       // 总失败次数
+	ConsecutiveSuccess int       `json:"consecutive_success"` // 连续成功次数
+	ConsecutiveFailure int       `json:"consecutive_failure"` // 连续失败次数
+	AvgLatency         float64   `json:"avg_latency_ms"`      // 平均延迟（EWMA）
+	LatencyJitter      float64   `json:"latency_jitter_ms"`   // 延迟波动（EWMA |Δ|）
 	LastFailure        time.Time `json:"last_failure,omitempty"`
 	LastSuccess        time.Time `json:"last_success,omitempty"`
-	HealthScore        int       `json:"health_score"`      // 综合健康分 0-100
+	HealthScore        int       `json:"health_score"` // 综合健康分 0-100
 	CooldownUntil      time.Time `json:"cooldown_until,omitempty"`
 }
 
 const (
-	ewmaAlpha         = 0.3               // 延迟 EWMA 平滑系数
-	cooldownBase      = 5 * time.Minute   // 首次冷却时长（任务书第六节示例）
-	cooldownMax       = 30 * time.Minute  // 冷却上限（反复失败逐次翻倍）
-	cooldownThreshold = 2                 // 连续失败达到该次数进入冷却
-	neutralScore      = 55                // 无数据节点的中性分
+	ewmaAlpha         = 0.3              // 延迟 EWMA 平滑系数
+	cooldownBase      = 5 * time.Minute  // 首次冷却时长（任务书第六节示例）
+	cooldownMax       = 30 * time.Minute // 冷却上限（反复失败逐次翻倍）
+	cooldownThreshold = 2                // 连续失败达到该次数进入冷却
+	neutralScore      = 55               // 无数据节点的中性分
 )
 
 // HealthTracker 全体节点的健康统计表（并发安全）。

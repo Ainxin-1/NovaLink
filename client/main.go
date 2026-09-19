@@ -417,7 +417,9 @@ func (a *app) handleSettings(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, a.settings)
 		return
 	}
-	var s core.Settings
+	// 以当前设置为基底解码提交内容：整体替换会让界面未提交的字段被清零
+	// （早先保存一次设置就可能把 singbox_path / pool_url 抹成空串）。
+	s := *a.settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		http.Error(w, "参数错误", 400)
 		return
@@ -426,6 +428,9 @@ func (a *app) handleSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "代理端口不合法", 400)
 		return
 	}
+	if s.MaxNodeLatencyMS < 0 {
+		s.MaxNodeLatencyMS = 0
+	}
 	oldListen := a.settings.Listen
 	a.settings = &s
 	if err := core.SaveSettings(filepath.Join(a.dataDir, "settings.json"), &s); err != nil {
@@ -433,6 +438,7 @@ func (a *app) handleSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.manager.SetError("")
+	a.manager.SetSettings(&s) // 让运行中的管理器立即用上新值（闸门/端口/核心路径）
 	a.logf("设置已保存（监听地址变更需重启客户端生效）")
 	if s.Listen != oldListen {
 		a.logf("监听地址已改为 %s", s.Listen)

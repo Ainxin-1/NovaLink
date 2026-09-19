@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"novanode/model"
@@ -35,17 +36,17 @@ const (
 
 const (
 	probeInterval = 1500 * time.Millisecond
-	probeTimeout  = 25 * time.Second // 单批连接验证上限
+	probeTimeout  = 25 * time.Second                      // 单批连接验证上限
 	probeHTTP     = "https://www.google.com/generate_204" // 必须直连不可达，否则假阳性
-	batchSize     = 8               // 内核 urltest 组的节点数（任务书第十五章：自动选择最快）
-	failoverMax   = 5               // 整批全灭时最多再换 5 批
-	clashAPIPort  = 9095            // 内核 clash_api，用于查询/切换当前节点
+	batchSize     = 8                                     // 内核 urltest 组的节点数（任务书第十五章：自动选择最快）
+	failoverMax   = 5                                     // 整批全灭时最多再换 5 批
+	clashAPIPort  = 9095                                  // 内核 clash_api，用于查询/切换当前节点
 	infoInterval  = 10 * time.Second
 
-	healthInterval = 20 * time.Second // 健康检查周期
-	urltestWait    = 12 * time.Second // 单轮全失败后给内核 urltest 自切的重选窗口
-	minHold        = 45 * time.Second // 防抖动最短保持时间（任务书第十三节）
-	urltestInterval = "30s"           // 任务书第三节：urltest 测试周期 2m → 30s
+	healthInterval  = 20 * time.Second // 健康检查周期
+	urltestWait     = 12 * time.Second // 单轮全失败后给内核 urltest 自切的重选窗口
+	minHold         = 45 * time.Second // 防抖动最短保持时间（任务书第十三节）
+	urltestInterval = "30s"            // 任务书第三节：urltest 测试周期 2m → 30s
 )
 
 // probeTargets 多 Probe 目标（任务书第八节）：全部是轻量 204 端点，
@@ -72,36 +73,47 @@ var directTargets = []string{
 // 再降分冷却并切换组内其他节点，只有整组失败才换批，
 // 只有核心进程自身异常才重启核心（任务书第一/十七节）。
 type Manager struct {
-	mu        sync.Mutex
-	settings  *Settings
-	phase     string
-	node      *model.Node // 当前实际使用的节点（内核选择或手动切换，信息循环刷新）
-	since     time.Time
-	lastError string
-	exitInfo  string
-	cmd       *exec.Cmd
-	done      chan struct{}
-	exitErr   error // 核心进程退出错误（唯一 Wait goroutine 写入）
-	stopped   bool  // 主动停止标志：区分主动停止与进程崩溃（任务书第二节）
-	dataDir   string
-	sysProxy  bool
-	pool      []*model.Node // 候选池快照（健康分排序）
-	batchIdx  int           // 当前批索引
-	gen       int
-	tracker   *HealthTracker
-	localProbe  *LocalProbe // 本机协议级实测结果（选路的唯一可信依据）
-	netState  string      // 网络分层状态 HEALTHY/DEGRADED/FAILED
-	lastSwitch time.Time  // 最近一次节点切换时间（防抖动）
+	mu         sync.Mutex
+	settings   atomic.Pointer[Settings] // 保存设置后要能被运行中的循环看到，故不直接用裸指针
+	phase      string
+	node       *model.Node // 当前实际使用的节点（内核选择或手动切换，信息循环刷新）
+	since      time.Time
+	lastError  string
+	exitInfo   string
+	cmd        *exec.Cmd
+	done       chan struct{}
+	exitErr    error // 核心进程退出错误（唯一 Wait goroutine 写入）
+	stopped    bool  // 主动停止标志：区分主动停止与进程崩溃（任务书第二节）
+	dataDir    string
+	sysProxy   bool
+	pool       []*model.Node // 候选池快照（健康分排序）
+	batchIdx   int           // 当前批索引
+	gen        int
+	tracker    *HealthTracker
+	localProbe *LocalProbe // 本机协议级实测结果（选路的唯一可信依据）
+	netState   string      // 网络分层状态 HEALTHY/DEGRADED/FAILED
+	lastSwitch time.Time   // 最近一次节点切换时间（防抖动）
 }
 
 // NewManager 创建核心管理器。
 func NewManager(settings *Settings, dataDir string) *Manager {
-	return &Manager{
-		settings: settings, phase: PhaseDisconnected, dataDir: dataDir,
-		tracker: NewHealthTracker(filepath.Join(dataDir, "runtime_health.json")),
+	m := &Manager{
+		phase: PhaseDisconnected, dataDir: dataDir,
+		tracker:    NewHealthTracker(filepath.Join(dataDir, "runtime_health.json")),
 		localProbe: NewLocalProbe(filepath.Join(dataDir, "local_probe.json")),
 	}
+	m.settings.Store(settings)
+	return m
 }
+
+// set 返回当前设置快照；读侧一律走它，避免与"保存设置"并发踩裸指针。
+func (m *Manager) set() *Settings { return m.settings.Load() }
+
+// SetSettings 让运行中的管理器用上新设置。
+//
+// 早先保存设置只替换了 app 上的指针，管理器仍拿着创建时那一份 ——
+// 改核心路径、代理端口、延迟闸门都会被静默忽略，只有重启才生效。
+func (m *Manager) SetSettings(s *Settings) { m.settings.Store(s) }
 
 // LocalProbe 暴露本机实测记录（状态展示与后台滚动测活共用）。
 func (m *Manager) Probe() *LocalProbe { return m.localProbe }
@@ -114,7 +126,7 @@ func (m *Manager) ProbePool(nodes []*model.Node, progress func(done, usable, tot
 	if logf != nil {
 		logf("[LOCAL] 本机协议级实测开始：%d 个候选（真实握手 + 取回外网内容，批 %d）", len(nodes), probeChunk)
 	}
-	return m.localProbe.ScanPool(nodes, m.settings.SingBoxPath, progress, logf)
+	return m.localProbe.ScanPool(nodes, m.set().SingBoxPath, progress, logf)
 }
 
 // SetFailoverPool 设置候选池快照：按健康分排序（任务书第七/十二节，
@@ -141,11 +153,67 @@ func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ..
 		return
 	}
 	const (
-		probeBatch    = 64               // 每批并发探测数
-		needReachable = 4 * batchSize    // 凑够 4 批可用即停（够 failover 用）
-		probeCap      = 1600             // 上限（覆盖常见可用池规模，约 40 秒）
+		probeBatch    = 64            // 每批并发探测数
+		needReachable = 4 * batchSize // 凑够 4 批可用即停（够 failover 用）
+		probeCap      = 1600          // 上限（覆盖常见可用池规模，约 40 秒）
 		probeTimeout  = 2500 * time.Millisecond
 	)
+	// 延迟闸门：优先只用本机实测可用且 ≤阈值的节点组批。
+	// urltest 只在组内择优，放进一个 3.4s 的节点就等于接受"最差可能是 3.4s"。
+	//
+	// 但闸门是"优先"而不是"硬砍"：合格数不足一个组批（batchSize）时由 Gate
+	// 按次快补齐。两次实测教训 —— 15:52 严格闸门只剩 1 个节点，27 秒后它一挂
+	// 就直接连不上；16:09 只剩 3 个且都已失效，同样连败。0.05% 的可用率加上
+	// 十几分钟的失效尺度，容不下把备选砍光。
+	maxLat := m.set().MaxNodeLatencyMS
+	all := nodes // 闸门前的全集：复测从这里挑，否则候选会被闸门先掏空
+	gated, over := m.localProbe.Gate(all, maxLat)
+	if len(gated) == 0 {
+		gated = all
+	}
+	if maxLat > 0 && logf != nil && over > 0 {
+		best, worst, n := m.localProbe.KeptSpread(gated)
+		logf("[POOL] 延迟闸门 %dms：入选 %d 个（实测 %d~%dms），%d 个更慢的排在其后",
+			maxLat, n, best, worst, over)
+	}
+	// 组批前就地复测：免费节点的失效尺度是十几分钟，而结论有效期是 6 小时。
+	// 新鲜可用数不足一个组批时，先复测（含闸门外的候选，可能刚变快/复活）再组批。
+	if fresh, _ := m.localProbe.GoodWithin(gated, probeFresh); fresh < minGroupRedundancy {
+		recheck := m.localProbe.Due(all, probeBatch*3)
+		if len(recheck) > 0 {
+			if logf != nil {
+				logf("[POOL] %d 分钟内的实测可用节点仅 %d 个（组批需 %d 个），先复测 %d 个候选再组批",
+					int(probeFresh.Minutes()), fresh, minGroupRedundancy, len(recheck))
+			}
+			m.localProbe.ScanPool(recheck, m.set().SingBoxPath, nil, logf)
+			g2, o2 := m.localProbe.Gate(all, maxLat)
+			if len(g2) > 0 {
+				gated = g2
+				if logf != nil {
+					b2, w2, n2 := m.localProbe.KeptSpread(g2)
+					logf("[POOL] 复测后：%d 个入选（实测 %d~%dms），%d 个更慢的排在其后", n2, b2, w2, o2)
+				}
+			}
+		}
+	}
+	nodes = gated
+	if len(nodes) == 0 {
+		return
+	}
+	// 闸门生效时不必凑满一批：实测合格的节点哪怕只有 3 个也只用它们。
+	if maxLat > 0 {
+		if good, best := m.localProbe.GoodWithin(nodes, probeFresh); good >= 1 {
+			final := m.localProbe.Rank(nodes)
+			if logf != nil {
+				logf("[POOL] 本批用 %d 分钟内的 %d 个实测可用节点组批（最快 %dms）",
+					int(probeFresh.Minutes()), good, best)
+			}
+			m.mu.Lock()
+			m.pool, m.batchIdx = final, 0
+			m.mu.Unlock()
+			return
+		}
+	}
 	// 本机已有足够协议级实测时，直接按实测排序，跳过 TCP 预筛：
 	// "端口活着"与"能翻墙"是两件事（实测 783 个 TCP 存活只有 18 个真通），
 	// 而且预筛本身最长要拖 40 秒。
@@ -391,7 +459,7 @@ func chunkPool(nodes []*model.Node, size int) [][]*model.Node {
 
 // runBatch 启动一批节点（urltest 组）并阻塞验证：连上返回 true。
 func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...any)) bool {
-	port := m.settings.ProxyPort
+	port := m.set().ProxyPort
 	cfgPath := filepath.Join(m.dataDir, "core_config.json")
 
 	var obs []any
@@ -452,8 +520,8 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 	if !writeCfg(true) {
 		return false
 	}
-	if _, err := os.Stat(m.settings.SingBoxPath); err != nil {
-		logf("核心程序不存在: %s", m.settings.SingBoxPath)
+	if _, err := os.Stat(m.set().SingBoxPath); err != nil {
+		logf("核心程序不存在: %s", m.set().SingBoxPath)
 		m.fail("核心程序不存在，请在设置中检查路径")
 		return false
 	}
@@ -464,7 +532,7 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 		return false
 	}
 	check := func() ([]byte, error) {
-		return exec.Command(m.settings.SingBoxPath, "check", "-c", cfgPath).CombinedOutput()
+		return exec.Command(m.set().SingBoxPath, "check", "-c", cfgPath).CombinedOutput()
 	}
 	if out, err := check(); err != nil {
 		if len(rules) == 0 {
@@ -483,7 +551,7 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 		}
 	}
 
-	cmd := exec.Command(m.settings.SingBoxPath, "run", "-c", cfgPath)
+	cmd := exec.Command(m.set().SingBoxPath, "run", "-c", cfgPath)
 	done := make(chan struct{})
 	if err := cmd.Start(); err != nil {
 		// 启动失败（任务书第二节：与运行中崩溃区分）
@@ -529,7 +597,7 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 	go m.exitWatch(done, gen, logf)
 	go m.infoLoop(port, batch, tags, logf)
 	go m.healthLoop(port, batch, tags, logf)
-	if m.settings.AutoSysProxy {
+	if m.set().AutoSysProxy {
 		if err := SetSystemProxy(port, filepath.Join(m.dataDir, "sysproxy_backup.json")); err != nil {
 			logf("系统代理设置失败: %v（可手动设置系统代理为 127.0.0.1:%d）", err, port)
 		} else {
@@ -650,7 +718,7 @@ func (m *Manager) healthLoop(port int, batch []*model.Node, tags []string, logf 
 	for i := range batch {
 		byTag[batch[i].ID] = batch[i]
 	}
-	fails := 0             // 连续确认失败轮数
+	fails := 0                 // 连续确认失败轮数
 	tried := map[string]bool{} // 本批内已确认失败（不再选）的节点
 	for {
 		time.Sleep(healthInterval)
@@ -957,7 +1025,7 @@ func (m *Manager) Disconnect(logf func(string, ...any)) error {
 		RestoreSystemProxy(filepath.Join(m.dataDir, "sysproxy_backup.json"))
 		logf("系统代理已恢复为用户原设置")
 	}
-	logf("已断开，端口 %d 恢复", m.settings.ProxyPort)
+	logf("已断开，端口 %d 恢复", m.set().ProxyPort)
 	return nil
 }
 

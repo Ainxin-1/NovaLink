@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	probeFresh    = 30 * time.Minute // 该间隔内不重复测同一节点
+	probeFresh    = 10 * time.Minute // 该间隔内不重复测同一节点（实测失效尺度是十几分钟）
 	probeValidFor = 6 * time.Hour    // 超过即不再采信（免费节点时效以小时计）
 	probeBasePort = 34000            // 与管线(30000)和自身代理端口错开
 	probeChunk    = 64               // 一批 = 一个核心进程带 64 个入站/出站对
@@ -35,9 +35,9 @@ type probeRecord struct {
 
 // LocalProbe 保存本机对各节点的协议级实测结果（落盘，重启不丢）。
 type LocalProbe struct {
-	mu    sync.Mutex
-	path  string
-	rec   map[string]probeRecord
+	mu   sync.Mutex
+	path string
+	rec  map[string]probeRecord
 }
 
 // NewLocalProbe 读取（或初始化）实测记录。文件损坏时按空处理而不是退出。
@@ -226,6 +226,98 @@ func (p *LocalProbe) Rank(nodes []*model.Node) []*model.Node {
 		out[i] = items[i].node
 	}
 	return out
+}
+
+// minGroupRedundancy 候选组的最少节点数。
+//
+// 为什么保底要等于组批大小：2026-09-19 实测，严格 800ms 闸门下只剩 1 个合格节点，
+// 核心起来 27 秒后那唯一一个失效 → 组内无备选 → 直接连不上；而不设闸门时
+// 不设闸门时同一时刻有 11 个可用节点、能正常出网。所以"不要高延迟"只能是偏好，
+// 不能是把备选砍光的硬过滤 —— 组内没备选就等于单点，单点必挂。
+const minGroupRedundancy = batchSize
+
+// Gate 用延迟闸门切候选。
+//
+// 返回 kept（优先实测可用且 ≤maxMS，按延迟升序；不足 minGroupRedundancy 个
+// 时用次快的实测可用节点补到该数）与 over（因超线被让位的个数）。
+// maxMS<=0 表示不设闸门。补进来的一定是**本机实测可用**的，未测节点不补位
+// （未测=延迟未知，拿它补位等于把"不要高延迟"变成赌运气）。
+//
+// 实测分布决定这里的取舍（同一台机器同一线路，11 个可用节点协议级延迟）：
+//
+//	594 731 740 | 876 908 | 1553 1582 | 2012 2096 2132 | 3394 ms
+func (p *LocalProbe) Gate(nodes []*model.Node, maxMS int) (kept []*model.Node, over int) {
+	if maxMS <= 0 {
+		return nodes, 0
+	}
+	fast, slow := []*model.Node{}, []*model.Node{}
+	for _, n := range nodes {
+		r, seen := p.record(n.ID)
+		switch {
+		case !seen || !r.OK:
+			continue // 未测/实测失败：不参与组批，交给 Rank 与 TCP 预筛兜底
+		case r.LatencyMS > maxMS:
+			over++
+			slow = append(slow, n)
+		default:
+			fast = append(fast, n)
+		}
+	}
+	byLat := func(ns []*model.Node) {
+		sort.SliceStable(ns, func(i, j int) bool {
+			li, _ := p.record(ns[i].ID)
+			lj, _ := p.record(ns[j].ID)
+			return li.LatencyMS < lj.LatencyMS
+		})
+	}
+	byLat(fast)
+	byLat(slow)
+	kept = fast
+	for i := 0; i < len(slow) && len(kept) < minGroupRedundancy; i++ {
+		kept = append(kept, slow[i]) // 保底：拿次快且实测可用的，别把组批掏空
+	}
+	if len(kept) == 0 {
+		return nodes, over
+	}
+	return kept, over
+}
+
+// KeptSpread 返回kept里最快/最慢的实测延迟，用于把闸门效果说清楚。
+func (p *LocalProbe) KeptSpread(nodes []*model.Node) (best, worst, qualified int) {
+	best, worst = 0, 0
+	for _, n := range nodes {
+		r, seen := p.record(n.ID)
+		if !seen || !r.OK {
+			continue
+		}
+		if best == 0 || r.LatencyMS < best {
+			best = r.LatencyMS
+		}
+		if r.LatencyMS > worst {
+			worst = r.LatencyMS
+		}
+	}
+	return best, worst, len(nodes)
+}
+
+// GoodWithin 返回"在 within 之内被实测判为可用"的节点数与其中最快延迟。
+//
+// 与 KnownGood 的区别就是这个 within：免费节点的失效尺度是十几分钟
+// （实测：15:12 那轮 11 个可用，到 16:03 直接连败两批），所以"多久之内的
+// 结论才算数"必须能单独问，不能一律按 6 小时的有效期。
+func (p *LocalProbe) GoodWithin(nodes []*model.Node, within time.Duration) (int, int) {
+	n, best := 0, 0
+	for _, nd := range nodes {
+		r, seen := p.record(nd.ID)
+		if !seen || !r.OK || time.Since(r.At) > within {
+			continue
+		}
+		n++
+		if r.LatencyMS > 0 && (best == 0 || r.LatencyMS < best) {
+			best = r.LatencyMS
+		}
+	}
+	return n, best
 }
 
 // KnownGood 返回候选里本机实测可用的数量与最快一个的延迟（用于状态展示）。

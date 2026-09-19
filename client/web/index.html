@@ -122,6 +122,8 @@ label{display:block;color:var(--sub);font-size:12px;margin:12px 0 4px}
     <input id="set-port" type="number" style="width:140px">
     <label>界面监听地址（变更后需重启）</label>
     <input id="set-listen" style="width:260px">
+    <label>延迟闸门（本机实测超过此毫秒数的节点不进候选组，0=不限制）</label>
+    <input id="set-maxlat" type="number" step="100" style="width:140px">
     <label style="display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--tx);font-size:13px">
       <input type="checkbox" id="set-sysproxy" style="width:auto"> 连接成功后自动接管系统代理（断开时恢复原状）
     </label>
@@ -207,13 +209,15 @@ async function loadSettings(){const s=await (await fetch("/api/settings")).json(
   $("set-sb").value=s.singbox_path;$("set-pool").value=s.pool_path;
   $("set-poolurl").value=s.pool_url||"";
   $("set-port").value=s.proxy_port;$("set-listen").value=s.listen;
-  $("set-sysproxy").checked=!!s.auto_sysproxy;}
+  $("set-sysproxy").checked=!!s.auto_sysproxy;
+  $("set-maxlat").value=(s.max_node_latency_ms==null?800:s.max_node_latency_ms);}
 $("btn-save").onclick=async()=>{
   const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({singbox_path:$("set-sb").value,pool_path:$("set-pool").value,
       pool_url:$("set-poolurl").value.trim(),
       proxy_port:+$("set-port").value,listen:$("set-listen").value,
-      auto_sysproxy:$("set-sysproxy").checked})});
+      auto_sysproxy:$("set-sysproxy").checked,
+      max_node_latency_ms:+$("set-maxlat").value})});
   $("set-msg").textContent=r.ok?"已保存":("失败: "+await r.text());};
 async function loadLogs(){const d=await (await fetch("/api/log")).json();
   const el=$("loglist");el.className="";el.textContent=d.lines.join("\n")||"暂无日志";}

@@ -44,7 +44,7 @@ var geoMirrors = []string{
 }
 
 const (
-	ruleMinSize   = 1024          // 小于此值不可能是完整规则集（多半是被打断的下载）
+	ruleMinSize   = 1024                // 小于此值不可能是完整规则集（多半是被打断的下载）
 	ruleRefreshAt = 30 * 24 * time.Hour // 随包规则超过该时长才尝试联网刷新
 )
 

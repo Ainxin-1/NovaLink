@@ -16,6 +16,9 @@ type Settings struct {
 	Listen       string `json:"listen"`        // 本客户端 Web 界面监听地址
 	ProxyPort    int    `json:"proxy_port"`    // 核心 mixed 入站端口
 	AutoSysProxy bool   `json:"auto_sysproxy"` // 连接成功后自动接管系统代理
+	// MaxNodeLatencyMS 延迟闸门：本机实测超过该值的节点不进候选组
+	// （0 = 不设闸门）。与管线的"可用线"同口径，默认 800ms。
+	MaxNodeLatencyMS int `json:"max_node_latency_ms"`
 }
 
 // LoadSettings 读取设置；不存在时按所在目录生成默认值。
@@ -53,12 +56,13 @@ func SaveSettings(path string, s *Settings) error {
 
 func defaultSettings(dataDir string) *Settings {
 	return &Settings{
-		SingBoxPath:  resolveCore(dataDir),
-		PoolPath:     filepath.Join(dataDir, "pool.json"),
-		PoolURL:      DefaultPoolURL,
-		Listen:       "127.0.0.1:7892",
-		ProxyPort:    7890,
-		AutoSysProxy: true,
+		SingBoxPath:      resolveCore(dataDir),
+		PoolPath:         filepath.Join(dataDir, "pool.json"),
+		PoolURL:          DefaultPoolURL,
+		Listen:           "127.0.0.1:7892",
+		ProxyPort:        7890,
+		AutoSysProxy:     true,
+		MaxNodeLatencyMS: 800,
 	}
 }
 
