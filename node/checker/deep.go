@@ -46,6 +46,31 @@ func ProbeURL() string {
 	return defaultProbeURL
 }
 
+// ProbeTargets 返回一轮检测实际使用的目标列表。
+//
+// 默认三目标：单目标判"可用"太宽 —— 节点只要能到 google 就算通过，
+// 但客户端连接验证要求 2/3，于是出现"本地实测可用、就是连不上"。
+// 用 NOVANODE_PROBE_URL 指定单一目标时（比如特殊网络环境）退化为单目标口径。
+// 这里的目标同样必须满足"运行环境直连不可达"，否则等于没测（见 probe_test.go）。
+func ProbeTargets() []string {
+	if v := strings.TrimSpace(os.Getenv("NOVANODE_PROBE_URL")); v != "" {
+		return []string{v}
+	}
+	return []string{
+		"https://www.google.com/generate_204",
+		"https://www.youtube.com/generate_204",
+		"https://www.facebook.com/generate_204",
+	}
+}
+
+// PassVerdict 多目标判定：过半通过才算可用（且至少要有一个通过）。
+func PassVerdict(okN, total int) bool {
+	if total <= 0 {
+		return false
+	}
+	return okN > 0 && okN >= (total+1)/2
+}
+
 // Deep 对 nodes 做协议级检测：按 chunkSize 分批，每批生成一个
 // 多入站/多出站的 sing-box 配置（入站 i 固定路由到出站 i），
 // 启动一个核心进程并发验证整批，然后更换下一批。
@@ -183,17 +208,41 @@ func tryChunk(batch int, chunk []model.Node, singboxPath string, basePort int, w
 					return url.Parse(fmt.Sprintf("http://127.0.0.1:%d", t.port))
 				}},
 			}
-			t0 := time.Now()
-			resp, err := cl.Get(ProbeURL())
-			lat := int(time.Since(t0).Milliseconds())
+			// 与客户端 healthLoop 同口径：多目标里 ≥2 通过才算可用。
+			// 只测 1 个目标会产出"能到 google 但上不了 YouTube/Facebook"的节点，
+			// 这些节点在本地实测里被判可用、进了候选组，却在连接验证时被 2/3 规则
+			// 拒掉 —— 实测出现过"池子里有 2 个可用节点却连不上"（2026-09-19）。
+			urls := ProbeTargets()
+			var wgN sync.WaitGroup
+			var muN sync.Mutex
+			okN, sum, n := 0, 0, 0
+			for _, u := range urls {
+				wgN.Add(1)
+				go func(u string) {
+					defer wgN.Done()
+					t0 := time.Now()
+					resp, err := cl.Get(u)
+					lat := int(time.Since(t0).Milliseconds())
+					muN.Lock()
+					defer muN.Unlock()
+					if err == nil {
+						_ = resp.Body.Close()
+						if resp.StatusCode == http.StatusNoContent {
+							okN++
+							sum += lat
+							n++
+						}
+					}
+				}(u)
+			}
+			wgN.Wait()
+			lat := 0
+			if n > 0 {
+				lat = sum / n
+			}
 			mu.Lock()
 			defer mu.Unlock()
-			if err == nil {
-				_ = resp.Body.Close()
-				out[t.id] = Result{ID: t.id, OK: resp.StatusCode == http.StatusNoContent, LatencyMS: lat}
-			} else {
-				out[t.id] = Result{ID: t.id, OK: false}
-			}
+			out[t.id] = Result{ID: t.id, OK: PassVerdict(okN, len(urls)), LatencyMS: lat}
 		}(t)
 	}
 	wg.Wait()
