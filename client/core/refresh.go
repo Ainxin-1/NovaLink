@@ -23,7 +23,7 @@ import (
 )
 
 // DefaultPoolURL 默认云端订阅地址（仓库 CI 发布产物）。
-const DefaultPoolURL = "https://cdn.jsdelivr.net/gh/Ainxin-1/NovaLink@main/data/pool.json"
+const DefaultPoolURL = "https://cdn.jsdelivr.net/gh/Ainxin-1/NovaLink@main/data/published/pool_slim.json"
 
 const (
 	proxySocksAddr  = "127.0.0.1:10808" // 本机常见代理端口（v2rayN 默认）
@@ -99,7 +99,7 @@ func fetchPool(s fetchSource) (*model.Pool, error) {
 	if s.name == "jsDelivr" || s.name == "jsDelivr(代理)" {
 		// 先 purge CDN 缓存，保证拿到最近一次 Actions 的产物（失败忽略）
 		purge := http.Client{Timeout: 6 * time.Second, Transport: transportFor(s.sock)}
-		resp, err := purge.Get("https://purge.jsdelivr.net/gh/Ainxin-1/NovaLink@main/data/pool.json")
+		resp, err := purge.Get("https://purge.jsdelivr.net/gh/Ainxin-1/NovaLink@main/data/published/pool_slim.json")
 		if err == nil {
 			_ = resp.Body.Close()
 		}
@@ -136,7 +136,7 @@ func rawFallback(cdnURL string) string {
 			}
 		}
 	}
-	return "https://raw.githubusercontent.com/Ainxin-1/NovaLink/main/data/pool.json"
+	return "https://raw.githubusercontent.com/Ainxin-1/NovaLink/main/data/published/pool_slim.json"
 }
 
 // transportFor 直连或走本机 socks5 代理。

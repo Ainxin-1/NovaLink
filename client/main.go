@@ -23,12 +23,16 @@ import (
 	"novalink/core"
 
 	"novanode/cache"
-	"novanode/checker"
 	"novanode/model"
 )
 
 //go:embed web
 var webFS embed.FS
+
+// rollingProbeRound 两轮本机协议级实测之间的间隔。
+// 实测内的节点结论 30 分钟后就该重测（LocalProbe.Due 负责去重），
+// 间隔太短会与连接抢带宽，太长则拿旧结论选路。
+const rollingProbeRound = 15 * time.Minute
 
 type app struct {
 	mu       sync.Mutex
@@ -36,18 +40,41 @@ type app struct {
 	settings *core.Settings
 	manager  *core.Manager
 	logs     []string
-	// 设备端检测覆盖层（客户端本地观察，不写管线节点池）
-	overlay     map[string]overlayEntry
+	// 设备端协议级实测进度（结果落在 LocalProbe，选路与界面共用）
 	checkTotal  int
 	checkDone   int
+	checkUsable int
 	checking    bool
 	refreshing  bool
+	// 节点池按 (路径,大小,mtime) 缓存：文件已达数十 MB，而界面每 30 秒拉一次
+	// /api/nodes、每次连接还要再读一遍 —— 逐请求重解析会把界面直接卡死。
+	poolCache *model.Pool
+	poolKey   string
 }
 
-type overlayEntry struct {
-	OK        bool   `json:"ok"`
-	LatencyMS int    `json:"latency_ms"`
-	At        string `json:"at"`
+// loadPool 读取节点池（带缓存）。
+func (a *app) loadPool() (*model.Pool, error) {
+	path := a.settings.PoolPath
+	st, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%s|%d|%d", path, st.Size(), st.ModTime().UnixNano())
+	a.mu.Lock()
+	if a.poolCache != nil && a.poolKey == key {
+		p := a.poolCache
+		a.mu.Unlock()
+		return p, nil
+	}
+	a.mu.Unlock()
+	pool, err := cache.Load(path)
+	if err != nil {
+		return nil, err
+	}
+	a.mu.Lock()
+	a.poolCache, a.poolKey = pool, key
+	a.mu.Unlock()
+	return pool, nil
 }
 
 func main() {
@@ -55,7 +82,7 @@ func main() {
 	listen := flag.String("listen", "", "覆盖设置中的监听地址")
 	flag.Parse()
 
-	a := &app{dataDir: *dir, overlay: map[string]overlayEntry{}}
+	a := &app{dataDir: *dir}
 	if err := os.MkdirAll(*dir, 0o755); err != nil {
 		fmt.Fprintln(os.Stderr, "错误:", err)
 		os.Exit(1)
@@ -70,7 +97,6 @@ func main() {
 	}
 	a.settings = s
 	a.manager = core.NewManager(s, *dir)
-	a.loadOverlay()
 	core.CleanupOrphan(s.ProxyPort, s.SingBoxPath, a.logf)
 	a.logf("NovaLink 客户端启动，界面地址 http://%s", s.Listen)
 
@@ -88,6 +114,9 @@ func main() {
 
 	url := "http://" + s.Listen
 	go openBrowser(url)
+	// 后台准备分流规则集（国内站与私网直连）。刻意不阻塞启动：
+	// 拿不到就退回全域代理，规则一落地，下一次连接自动带上。
+	go core.EnsureRuleSets(*dir, a.logf)
 	// 启动时后台检查节点池是否过期（超过 6 小时自动拉取云端最新）
 	if core.PoolStale(s.PoolPath, 6*time.Hour) {
 		go func() {
@@ -100,6 +129,18 @@ func main() {
 			a.logf("节点池自动刷新完成（来源 %s，%d 个节点）", src, n)
 		}()
 	}
+	// 后台滚动实测：免费节点的时效是小时级（今晚 44841 个候选里国内只活 19 个，
+	// 且一小时内结论就会变）。只在点"连接"时测一次，等于拿旧结论做新决策。
+	go func() {
+		for {
+			if pool, err := a.loadPool(); err == nil {
+				a.probePool(pool)
+			} else {
+				a.logf("[LOCAL] 读不到节点池，稍后重试: %v", err)
+			}
+			time.Sleep(rollingProbeRound)
+		}
+	}()
 	if err := http.ListenAndServe(s.Listen, mux); err != nil {
 		a.logf("服务退出: %v", err)
 		fmt.Fprintln(os.Stderr, err)
@@ -121,15 +162,17 @@ func (a *app) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 func (a *app) handleStatus(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
-	ct, cd, checking := a.checkTotal, a.checkDone, a.checking
+	ct, cd, cu, checking := a.checkTotal, a.checkDone, a.checkUsable, a.checking
 	a.mu.Unlock()
 	resp := a.manager.Snapshot()
-	resp["check"] = map[string]any{"total": ct, "done": cd, "running": checking}
+	resp["check"] = map[string]any{"total": ct, "done": cd, "usable": cu, "running": checking}
+	// 分流状态：随包规则是否已落地（缺了就是全域代理，国内站点也一起绕）
+	resp["split_route"] = len(core.LocalRuleSets(a.dataDir)) == 2
 	writeJSON(w, resp)
 }
 
 func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
-	pool, err := cache.Load(a.settings.PoolPath)
+	pool, err := a.loadPool()
 	if err != nil {
 		http.Error(w, "读取节点池失败: "+err.Error(), 500)
 		return
@@ -146,10 +189,6 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	famine := fastAvailable < 3 // 荒年：快节点不足时展示慢节点兜底
 
-	a.mu.Lock()
-	overlay := a.overlay
-	a.mu.Unlock()
-
 	rows := []nodeRow{}
 	counts := map[string]int{}
 	for _, n := range pool.Nodes {
@@ -157,16 +196,21 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 		if n.State == model.StateRemoved || n.State == model.StateExpired {
 			continue
 		}
+		// 本机协议级实测过的节点在默认视图里不得被藏起来：CI 把它们的延迟
+		// 标成 >800ms（DEGRADED）甚至是 NEW，而它们恰恰是这台机器上唯一能用的。
+		verifiedOK, verifiedLat, verifiedSeen := a.manager.Probe().Lookup(n.ID)
 		if hideFailed {
-			if n.State == model.StateFailed {
-				continue
-			}
-			if n.State == model.StateNew && n.FailCount > 0 {
-				continue
-			}
-			// 超慢节点（≥800ms 降级）默认隐藏，荒年（快节点<3）才展示兜底
-			if n.State == model.StateDegraded && !famine {
-				continue
+			if !verifiedOK {
+				if n.State == model.StateFailed {
+					continue
+				}
+				if n.State == model.StateNew && n.FailCount > 0 {
+					continue
+				}
+				// 超慢节点（≥800ms 降级）默认隐藏，荒年（快节点<3）才展示兜底
+				if n.State == model.StateDegraded && !famine {
+					continue
+				}
 			}
 		} else if stateFilter != "with-failed" && n.State != stateFilter {
 			continue
@@ -174,8 +218,8 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		r1 := nodeRow{ID: n.ID, Name: n.Name, Protocol: n.Protocol, Server: n.Server,
-			Port: n.Port, State: n.State, Latency: n.LatencyMS, Sources: len(n.Sources),
-			FailCount: n.FailCount}
+			Port: n.Port, State: n.State, Cloud: n.LatencyMS, Latency: n.LatencyMS,
+			Sources: len(n.Sources), FailCount: n.FailCount}
 		// 2.0 运行时健康度：健康分与冷却状态（仅本机观察过的节点有数据）
 		if h, ok := a.manager.HealthOf(n.ID); ok {
 			r1.Health = h.HealthScore
@@ -183,11 +227,14 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 		} else if a.manager.CooldownActive(n.ID) {
 			r1.Cool = true
 		}
-		if e, ok := overlay[n.ID]; ok {
-			if e.OK {
+		// 可达性与延迟一律以**本机协议级实测**为准：池子里的 latency 是
+		// GitHub 海外机房测的，对国内线路没有判别力（同一批节点，CI 说 800 个
+		// 可用，本机实测只有 19 个通、其中 11 个真能取回外网内容）。
+		if verifiedSeen {
+			if verifiedOK {
 				r1.Reach, r1.Online = "yes", true
-				if e.LatencyMS > 0 && (r1.Latency == 0 || r1.State == model.StateNew) {
-					r1.Latency = e.LatencyMS
+				if verifiedLat > 0 {
+					r1.Latency = verifiedLat
 				}
 			} else {
 				r1.Reach = "no"
@@ -215,6 +262,7 @@ type nodeRow struct {
 	Port      int    `json:"port"`
 	State     string `json:"state"`
 	Latency   int    `json:"latency_ms"`
+	Cloud     int    `json:"cloud_latency_ms,omitempty"` // 海外机房测的，仅作参考
 	Reach     string `json:"reach"`
 	Sources   int    `json:"sources"`
 	Online    bool   `json:"online"`
@@ -260,7 +308,7 @@ func (a *app) handleConnect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "参数错误", 400)
 		return
 	}
-	pool, err := cache.Load(a.settings.PoolPath)
+	pool, err := a.loadPool()
 	if err != nil {
 		http.Error(w, "读取节点池失败", 500)
 		return
@@ -271,15 +319,13 @@ func (a *app) handleConnect(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "该节点已淘汰，请选择其他节点", 400)
 				return
 			}
-			// 自动换节点候选池：先做本地 TCP 预筛（云端高分节点在国内未必可达），
-			// 再按健康分排序（稳定优先，任务书第七节）。用户点选的节点在 Connect 中移到组首。
-			nodes := cache.Publishable(pool)
-			a.manager.SetFailoverPoolLocal(nodes, a.logf)
-			if err := a.manager.Connect(n, a.logf); err != nil {
+			// 自动换节点候选池交给 Connect 在后台排序（本机协议级实测 →
+			// 健康分 → TCP 预筛），用户点选的节点放组首。HTTP 线程不再等待。
+			if err := a.manager.Connect(n, cache.Publishable(pool), a.logf); err != nil {
 				http.Error(w, err.Error(), 409)
 				return
 			}
-			writeJSON(w, map[string]any{"ok": true})
+			writeJSON(w, map[string]any{"ok": true, "phase": core.PhaseConnecting})
 			return
 		}
 	}
@@ -294,7 +340,7 @@ func (a *app) handleDisconnect(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"ok": true})
 }
 
-// handleCheck 触发设备端节点检测（后台执行，进度走 /api/status）。
+// handleCheck 触发设备端协议级实测（后台执行，进度走 /api/status）。
 func (a *app) handleCheck(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	if a.checking {
@@ -302,35 +348,40 @@ func (a *app) handleCheck(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "检测正在进行中", 409)
 		return
 	}
-	pool, err := cache.Load(a.settings.PoolPath)
+	a.mu.Unlock()
+	pool, err := a.loadPool()
 	if err != nil {
-		a.mu.Unlock()
 		http.Error(w, "读取节点池失败", 500)
 		return
 	}
-	due := []model.Node{}
-	for _, n := range pool.Nodes {
-		if n.State != model.StateExpired && n.State != model.StateRemoved {
-			due = append(due, *n)
-		}
-	}
-	a.checking, a.checkTotal, a.checkDone = true, len(due), 0
-	a.mu.Unlock()
+	go a.probePool(pool)
+	writeJSON(w, map[string]any{"ok": true})
+}
 
-	go func() {
-		start := time.Now()
-		results := checker.TCP(due, 5*time.Second, 16)
+// probePool 后台把候选扫一遍：真实协议握手 + 经该节点取回外网内容，
+// 结论写进 LocalProbe —— 它同时是选路排序和界面"可达"那一栏的依据。
+//
+// 为什么不再用 TCP 扫描：TCP 活着与能翻墙是两件事（实测 783 个 TCP 存活
+// 只有 18 个真通），而全池 TCP 扫一遍要 45 分钟。改成协议级后每批 64 个
+// 并发只要 10~50 秒，且结论真正可用于选路。
+func (a *app) probePool(pool *model.Pool) {
+	cands := cache.Publishable(pool)
+	if len(cands) == 0 {
+		a.logf("[LOCAL] 无可测候选（池子为空或全部失效），先用「刷新节点池」拉最新")
+		return
+	}
+	a.mu.Lock()
+	a.checking, a.checkTotal, a.checkDone, a.checkUsable = true, len(cands), 0, 0
+	a.mu.Unlock()
+	defer func() { a.mu.Lock(); a.checking = false; a.mu.Unlock() }()
+	start := time.Now()
+	tested, usable := a.manager.ProbePool(cands, func(done, ok, total int) {
 		a.mu.Lock()
-		for id, r := range results {
-			a.overlay[id] = overlayEntry{OK: r.OK, LatencyMS: r.LatencyMS, At: time.Now().UTC().Format(time.RFC3339)}
-			a.checkDone++
-		}
-		a.checking = false
+		a.checkDone, a.checkUsable = done, ok
 		a.mu.Unlock()
-		a.saveOverlay()
-		a.logf("设备端检测完成: %d 个节点，耗时 %s", len(due), time.Since(start).Round(time.Second))
-	}()
-	writeJSON(w, map[string]any{"ok": true, "total": len(due)})
+	}, a.logf)
+	a.logf("[LOCAL] 本机实测完成: 检测 %d 个，可用 %d 个，耗时 %s",
+		tested, usable, time.Since(start).Round(time.Second))
 }
 
 // handleRefresh 从云端订阅拉取最新节点池（jsDelivr → raw → 代理回退）。
@@ -398,24 +449,6 @@ func (a *app) logf(format string, args ...any) {
 	}
 	a.mu.Unlock()
 	fmt.Println(line)
-}
-
-func (a *app) overlayPath() string { return filepath.Join(a.dataDir, "local_check.json") }
-
-func (a *app) loadOverlay() {
-	b, err := os.ReadFile(a.overlayPath())
-	if err != nil {
-		return
-	}
-	_ = json.Unmarshal(b, &a.overlay)
-}
-
-func (a *app) saveOverlay() {
-	b, err := json.MarshalIndent(a.overlay, "", " ")
-	if err != nil {
-		return
-	}
-	_ = os.WriteFile(a.overlayPath(), b, 0o644)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

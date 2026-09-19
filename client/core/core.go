@@ -89,6 +89,7 @@ type Manager struct {
 	batchIdx  int           // 当前批索引
 	gen       int
 	tracker   *HealthTracker
+	localProbe  *LocalProbe // 本机协议级实测结果（选路的唯一可信依据）
 	netState  string      // 网络分层状态 HEALTHY/DEGRADED/FAILED
 	lastSwitch time.Time  // 最近一次节点切换时间（防抖动）
 }
@@ -98,7 +99,22 @@ func NewManager(settings *Settings, dataDir string) *Manager {
 	return &Manager{
 		settings: settings, phase: PhaseDisconnected, dataDir: dataDir,
 		tracker: NewHealthTracker(filepath.Join(dataDir, "runtime_health.json")),
+		localProbe: NewLocalProbe(filepath.Join(dataDir, "local_probe.json")),
 	}
+}
+
+// LocalProbe 暴露本机实测记录（状态展示与后台滚动测活共用）。
+func (m *Manager) Probe() *LocalProbe { return m.localProbe }
+
+// ProbePool 对候选做本机协议级实测（分批 + 进度回调），结果即选路依据。
+func (m *Manager) ProbePool(nodes []*model.Node, progress func(done, usable, total int), logf func(string, ...any)) (int, int) {
+	if len(nodes) == 0 {
+		return 0, 0
+	}
+	if logf != nil {
+		logf("[LOCAL] 本机协议级实测开始：%d 个候选（真实握手 + 取回外网内容，批 %d）", len(nodes), probeChunk)
+	}
+	return m.localProbe.ScanPool(nodes, m.settings.SingBoxPath, progress, logf)
 }
 
 // SetFailoverPool 设置候选池快照：按健康分排序（任务书第七/十二节，
@@ -130,7 +146,23 @@ func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ..
 		probeCap      = 1600             // 上限（覆盖常见可用池规模，约 40 秒）
 		probeTimeout  = 2500 * time.Millisecond
 	)
-	type r struct{ idx int; ok bool }
+	// 本机已有足够协议级实测时，直接按实测排序，跳过 TCP 预筛：
+	// "端口活着"与"能翻墙"是两件事（实测 783 个 TCP 存活只有 18 个真通），
+	// 而且预筛本身最长要拖 40 秒。
+	if good, best := m.localProbe.KnownGood(nodes); good >= batchSize {
+		final := m.localProbe.Rank(nodes)
+		if logf != nil {
+			logf("[POOL] 以本机协议级实测排序：%d 个已验证可用（最快 %dms），跳过 TCP 预筛", good, best)
+		}
+		m.mu.Lock()
+		m.pool, m.batchIdx = final, 0
+		m.mu.Unlock()
+		return
+	}
+	type r struct {
+		idx int
+		ok  bool
+	}
 
 	reach := map[int]bool{} // 已探明的下标 -> 是否可达
 	okN := 0
@@ -192,6 +224,12 @@ func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ..
 		}
 	}
 	final := append(reachable, unreachable...)
+	// TCP 预筛之后仍要用本机实测覆盖一次：实测可用的排最前（按延迟升序），
+	// 实测不可用的沉底但不删（免费节点的失败常常只是几分钟的抖动）。
+	final = m.localProbe.Rank(final)
+	if good, best := m.localProbe.KnownGood(final); good > 0 && logf != nil {
+		logf("[POOL] 其中本机实测已验证 %d 个可用（最快 %dms）", good, best)
+	}
 	m.mu.Lock()
 	m.pool, m.batchIdx = final, 0
 	m.mu.Unlock()
@@ -249,19 +287,15 @@ func (m *Manager) SetError(s string) {
 }
 
 // Connect 发起连接：取候选池当前批（≤8 节点）交给内核 urltest 自动选择。
-func (m *Manager) Connect(n *model.Node, logf func(string, ...any)) error {
+//
+// candidates 是本次可用的候选（通常是 cache.Publishable 的结果）。
+// 对它的排序/预筛放在后台 goroutine 里做：最坏情况要扫 1600 个地址，
+// 放在 HTTP 处理线程里会把界面卡住将近一分钟。
+func (m *Manager) Connect(n *model.Node, candidates []*model.Node, logf func(string, ...any)) error {
 	m.mu.Lock()
 	if m.phase == PhaseConnecting || m.phase == PhaseConnected {
 		m.mu.Unlock()
 		return fmt.Errorf("已有连接在进行，请先断开")
-	}
-	if len(m.pool) > 0 && m.pool[0].ID != n.ID {
-		for i, c := range m.pool { // 用户点选的节点放组首
-			if c.ID == n.ID {
-				m.pool[0], m.pool[i] = m.pool[i], m.pool[0]
-				break
-			}
-		}
 	}
 	m.node = n
 	m.phase = PhaseConnecting
@@ -271,8 +305,29 @@ func (m *Manager) Connect(n *model.Node, logf func(string, ...any)) error {
 	gen := m.gen
 	m.mu.Unlock()
 	logf("发起连接: %s/%s:%d（内核将在候选组内自动选择最快节点）", n.Protocol, n.Server, n.Port)
-	go m.supervise(gen, logf)
+	go func() {
+		if len(candidates) > 0 {
+			m.SetFailoverPoolLocal(candidates, logf)
+		}
+		m.pinFirst(n.ID) // 用户点选的节点始终放组首
+		m.supervise(gen, logf)
+	}()
 	return nil
+}
+
+// pinFirst 把指定节点移到候选队首（用户显式点选时压过自动排序）。
+func (m *Manager) pinFirst(id string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if len(m.pool) == 0 || m.pool[0].ID == id {
+		return
+	}
+	for i, c := range m.pool {
+		if c.ID == id {
+			m.pool[0], m.pool[i] = m.pool[i], m.pool[0]
+			return
+		}
+	}
 }
 
 // supervise 一代连接生命周期的监督者：逐批启动，整批全灭才换下一批。
@@ -354,28 +409,47 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 		logf("本批节点参数均不完整，跳过")
 		return false
 	}
-	cfg := map[string]any{
-		"log": map[string]any{"level": "warn"},
-		"experimental": map[string]any{
-			"clash_api": map[string]any{"external_controller": fmt.Sprintf("127.0.0.1:%d", clashAPIPort)},
-		},
-		"inbounds": []any{map[string]any{
-			"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": port,
-		}},
-		"outbounds": append([]any{
-			map[string]any{"type": "selector", "tag": "proxy",
-				"outbounds": append([]string{"auto"}, tags...), "default": "auto"},
-			map[string]any{"type": "urltest", "tag": "auto", "outbounds": tags,
-				"url": probeHTTP, "interval": urltestInterval, "tolerance": 50},
-		}, append(obs, map[string]any{"type": "direct", "tag": "direct"})...),
-		"route": map[string]any{"final": "proxy"},
+	// 分流规则只在连接路径上"读已落地的文件"，下载由启动/刷新时的
+	// EnsureRuleSets 负责 —— 否则一次镜像超时会直接拖死首连。
+	rules := LocalRuleSets(m.dataDir)
+	writeCfg := func(withGeo bool) bool {
+		route := map[string]any{"final": "proxy"}
+		if withGeo {
+			ruleSet, routeRules := cnRoute(rules)
+			if len(routeRules) > 0 {
+				route["rules"] = routeRules
+			}
+			if len(ruleSet) > 0 {
+				route["rule_set"] = ruleSet
+			}
+		}
+		cfg := map[string]any{
+			"log": map[string]any{"level": "warn"},
+			"experimental": map[string]any{
+				"clash_api": map[string]any{"external_controller": fmt.Sprintf("127.0.0.1:%d", clashAPIPort)},
+			},
+			"inbounds": []any{map[string]any{
+				"type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": port,
+			}},
+			"outbounds": append([]any{
+				map[string]any{"type": "selector", "tag": "proxy",
+					"outbounds": append([]string{"auto"}, tags...), "default": "auto"},
+				map[string]any{"type": "urltest", "tag": "auto", "outbounds": tags,
+					"url": probeHTTP, "interval": urltestInterval, "tolerance": 50},
+			}, append(obs, map[string]any{"type": "direct", "tag": "direct"})...),
+			"route": route,
+		}
+		b, err := json.MarshalIndent(cfg, "", "  ")
+		if err == nil {
+			err = os.WriteFile(cfgPath, b, 0o644)
+		}
+		if err != nil {
+			logf("写配置失败: %v", err)
+			return false
+		}
+		return true
 	}
-	b, err := json.MarshalIndent(cfg, "", "  ")
-	if err == nil {
-		err = os.WriteFile(cfgPath, b, 0o644)
-	}
-	if err != nil {
-		logf("写配置失败: %v", err)
+	if !writeCfg(true) {
 		return false
 	}
 	if _, err := os.Stat(m.settings.SingBoxPath); err != nil {
@@ -389,9 +463,24 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 		m.fail("代理端口 %d 被占用，可能有残留核心进程", port)
 		return false
 	}
-	if out, err := exec.Command(m.settings.SingBoxPath, "check", "-c", cfgPath).CombinedOutput(); err != nil {
-		logf("配置校验未通过: %s", firstLine(out))
-		return false
+	check := func() ([]byte, error) {
+		return exec.Command(m.settings.SingBoxPath, "check", "-c", cfgPath).CombinedOutput()
+	}
+	if out, err := check(); err != nil {
+		if len(rules) == 0 {
+			logf("配置校验未通过: %s", firstLine(out))
+			return false
+		}
+		// 规则集与核心版本不兼容时，退回全域代理而不是放弃连接：
+		// 分流是优化，不是前提。
+		logf("带分流规则的配置校验未通过（%s），本批退回全域代理", firstLine(out))
+		if !writeCfg(false) {
+			return false
+		}
+		if out, err := check(); err != nil {
+			logf("配置校验未通过: %s", firstLine(out))
+			return false
+		}
 	}
 
 	cmd := exec.Command(m.settings.SingBoxPath, "run", "-c", cfgPath)
@@ -453,7 +542,11 @@ func (m *Manager) runBatch(gen int, batch []*model.Node, logf func(string, ...an
 	return true
 }
 
-// probe 在时限内反复探测本地代理端口与外网连通性（多 Probe，≥1/3 即视为通）。
+// probe 在时限内反复探测本地代理端口与外网连通性。
+//
+// 判定口径必须与 healthLoop 一致：三目标命中 1 个在分层状态里叫 DEGRADED，
+// 若在这里当作"连接成功"，用户看到的就是"显示已连接但网页打不开"。
+// 因此以 HEALTHY（≥2/3）为连接成功标准。
 func (m *Manager) probe(port int) bool {
 	deadline := time.Now().Add(probeTimeout)
 	for time.Now().Before(deadline) {
@@ -467,11 +560,17 @@ func (m *Manager) probe(port int) bool {
 		}
 		conn.Close()
 		okN, _, state := m.multiProbe(port)
-		if okN >= 1 {
+		if state == NetHealthy {
 			m.mu.Lock()
 			m.netState = state
 			m.mu.Unlock()
 			return true
+		}
+		if okN == 1 {
+			// 半通：继续等下一轮，但记下状态，界面能看到"降级"
+			m.mu.Lock()
+			m.netState = state
+			m.mu.Unlock()
 		}
 	}
 	return false
@@ -582,13 +681,11 @@ func (m *Manager) healthLoop(port int, batch []*model.Node, tags []string, logf 
 			fails = 0
 			continue
 		case NetDegraded:
-			// 1/3 可达：网络可用但质量差。只观察，不惩罚不切换
+			// 1/3 可达：网络可用但质量差。只观察，不惩罚也不加分
 			// （任务书第十五节：不要因为一次 Probe 失败就换节点）。
+			// 早先这里调了 RecordSuccess —— 三目标只命中一个反而抬高健康分，
+			// 等于把假阳性写进选路依据，健康分就此失去意义。
 			logf("[HEALTH] node=%s probe=%d/%d latency=%dms state=DEGRADED（观察，暂不动作）", curID, okN, len(probeTargets), lat)
-			if curID != "" && lat > 0 {
-				m.tracker.RecordSuccess(curID, lat)
-			}
-			m.tracker.Flush()
 			fails = 0
 			continue
 		}
