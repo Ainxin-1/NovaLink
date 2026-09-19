@@ -4,5 +4,6 @@
   "chunk_size": 64,
   "base_port": 30000,
   "max_latency_ms": 800,
-  "max_deep": 6000
+  "max_deep": 6000,
+  "max_pool": 15000
 }
