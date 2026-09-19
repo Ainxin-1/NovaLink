@@ -18,11 +18,12 @@ type Settings struct {
 	AutoSysProxy bool   `json:"auto_sysproxy"` // 连接成功后自动接管系统代理
 }
 
-// LoadSettings 读取设置；不存在时写入默认值。
+// LoadSettings 读取设置；不存在时按所在目录生成默认值。
 func LoadSettings(path string) (*Settings, error) {
+	dir := filepath.Dir(path)
 	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		s := defaultSettings()
+		s := defaultSettings(dir)
 		if err := SaveSettings(path, s); err != nil {
 			return nil, err
 		}
@@ -31,7 +32,7 @@ func LoadSettings(path string) (*Settings, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := defaultSettings()
+	s := defaultSettings(dir)
 	if err := json.Unmarshal(b, s); err != nil {
 		return nil, err
 	}
@@ -50,13 +51,57 @@ func SaveSettings(path string, s *Settings) error {
 	return os.WriteFile(path, b, 0o644)
 }
 
-func defaultSettings() *Settings {
+func defaultSettings(dataDir string) *Settings {
 	return &Settings{
-		SingBoxPath:  "E:/NovaLink/core/vpn-core/sing-box-1.14.0-windows-amd64/sing-box.exe",
-		PoolPath:     "E:/NovaLink/node/data/pool.json",
+		SingBoxPath:  resolveCore(dataDir),
+		PoolPath:     filepath.Join(dataDir, "pool.json"),
 		PoolURL:      DefaultPoolURL,
 		Listen:       "127.0.0.1:7892",
 		ProxyPort:    7890,
 		AutoSysProxy: true,
 	}
+}
+
+// resolveCore 定位核心可执行文件。
+//
+// 原先默认值是一个开发机的绝对路径（E:/NovaLink/core/...），换台机器或换
+// 目录布局就必然报"核心程序不存在"。现在按显式环境变量 → 随程序分发 →
+// 数据目录 → 仓库开发树（取版本目录名字典序最后一个 = 较新版本）依次找。
+func resolveCore(dataDir string) string {
+	if v := os.Getenv("NOVALINK_SINGBOX"); v != "" {
+		return v
+	}
+	exeDir := ""
+	if p, err := os.Executable(); err == nil {
+		exeDir = filepath.Dir(p)
+	}
+	candidates := []string{}
+	for _, dir := range []string{exeDir, dataDir} {
+		if dir == "" {
+			continue
+		}
+		candidates = append(candidates,
+			filepath.Join(dir, "sing-box.exe"),
+			filepath.Join(dir, "core", "sing-box.exe"),
+		)
+	}
+	for _, dir := range []string{exeDir, dataDir} {
+		if dir == "" {
+			continue
+		}
+		// 仓库开发树：../core/vpn-core/sing-box-<ver>-windows-amd64/sing-box.exe
+		if ms, err := filepath.Glob(filepath.Join(dir, "..", "core", "vpn-core",
+			"sing-box-*-windows-amd64", "sing-box.exe")); err == nil && len(ms) > 0 {
+			candidates = append(candidates, ms[len(ms)-1])
+		}
+	}
+	for _, c := range candidates {
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
+			return c
+		}
+	}
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+	return "sing-box.exe"
 }

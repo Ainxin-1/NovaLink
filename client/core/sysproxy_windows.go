@@ -14,8 +14,9 @@ import (
 const internetSettingsKey = `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`
 
 type proxyBackup struct {
-	ProxyEnable string `json:"proxy_enable"`
-	ProxyServer string `json:"proxy_server,omitempty"`
+	ProxyEnable   string `json:"proxy_enable"`
+	ProxyServer   string `json:"proxy_server,omitempty"`
+	ProxyOverride string `json:"proxy_override,omitempty"`
 }
 
 var wininet = syscall.NewLazyDLL("wininet.dll")
@@ -76,6 +77,14 @@ func AssertSystemProxy(port int) error {
 	return nil
 }
 
+// proxyOverrideList 接管期间不进代理的地址。
+//
+// 必须覆盖整个 172.16.0.0/12（172.16–172.31）：只写 172.16.* 会让挂在
+// 172.17–172.31 的局域网设备（打印机、NAS、调试手机）被塞进隧道。
+const proxyOverrideList = "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;" +
+	"172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;" +
+	"172.29.*;172.30.*;172.31.*;192.168.*;<local>"
+
 // SetSystemProxy 将系统代理指向 127.0.0.1:port，并把用户原设置备份到 backupPath。
 func SetSystemProxy(port int, backupPath string) error {
 	b := proxyBackup{ProxyEnable: "0x0"}
@@ -84,6 +93,9 @@ func SetSystemProxy(port int, backupPath string) error {
 	}
 	if v, ok := regQueryValue("ProxyServer"); ok {
 		b.ProxyServer = v
+	}
+	if v, ok := regQueryValue("ProxyOverride"); ok {
+		b.ProxyOverride = v
 	}
 	if jb, err := json.MarshalIndent(b, "", "  "); err == nil {
 		_ = os.WriteFile(backupPath, jb, 0o644)
@@ -94,8 +106,7 @@ func SetSystemProxy(port int, backupPath string) error {
 	if err := regSet("ProxyEnable", "REG_DWORD", "0x1"); err != nil {
 		return err
 	}
-	if err := regSet("ProxyOverride", "REG_SZ",
-		"localhost;127.*;10.*;172.16.*;192.168.*;<local>"); err != nil {
+	if err := regSet("ProxyOverride", "REG_SZ", proxyOverrideList); err != nil {
 		return err
 	}
 	refreshNotify()
@@ -103,6 +114,10 @@ func SetSystemProxy(port int, backupPath string) error {
 }
 
 // RestoreSystemProxy 恢复备份的系统代理设置；无备份时仅关闭代理开关。
+//
+// ProxyOverride 也必须还回去：接管时我们覆写了它，而用户原本可能有自己的
+// 绕过列表（本机实测就是别的客户端写入的一份完整 RFC1918 列表）。
+// 只恢复 Server/Enable 会让那份列表永久丢失。
 func RestoreSystemProxy(backupPath string) {
 	b := proxyBackup{ProxyEnable: "0x0"}
 	if jb, err := os.ReadFile(backupPath); err == nil {
@@ -112,6 +127,11 @@ func RestoreSystemProxy(backupPath string) {
 		_ = regSet("ProxyServer", "REG_SZ", b.ProxyServer)
 	} else {
 		regDelete("ProxyServer")
+	}
+	if b.ProxyOverride != "" {
+		_ = regSet("ProxyOverride", "REG_SZ", b.ProxyOverride)
+	} else {
+		regDelete("ProxyOverride")
 	}
 	_ = regSet("ProxyEnable", "REG_DWORD", b.ProxyEnable)
 	refreshNotify()

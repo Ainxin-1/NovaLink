@@ -166,6 +166,10 @@ func (a *app) handleStatus(w http.ResponseWriter, r *http.Request) {
 	a.mu.Unlock()
 	resp := a.manager.Snapshot()
 	resp["check"] = map[string]any{"total": ct, "done": cd, "usable": cu, "running": checking}
+	// verified_usable 是**已落盘的本机实测可用数**（跨轮次累计），与 check.usable
+	// （本轮新测出多少）不同：结论 30 分钟内不重测，所以刚启动时本轮常常是 0，
+	// 而可用节点确实存在 —— 界面上必须显示前者，否则会被误读成"一个都没有"。
+	resp["verified_usable"] = a.manager.Probe().UsableCount()
 	// 分流状态：随包规则是否已落地（缺了就是全域代理，国内站点也一起绕）
 	resp["split_route"] = len(core.LocalRuleSets(a.dataDir)) == 2
 	writeJSON(w, resp)
