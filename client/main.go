@@ -234,6 +234,9 @@ func (a *app) handleNodes(w http.ResponseWriter, r *http.Request) {
 		// 可达性与延迟一律以**本机协议级实测**为准：池子里的 latency 是
 		// GitHub 海外机房测的，对国内线路没有判别力（同一批节点，CI 说 800 个
 		// 可用，本机实测只有 19 个通、其中 11 个真能取回外网内容）。
+		if d, ok := a.manager.Probe().Describe(n.ID); ok {
+			r1.Stat = d
+		}
 		if verifiedSeen {
 			if verifiedOK {
 				r1.Reach, r1.Online = "yes", true
@@ -267,6 +270,7 @@ type nodeRow struct {
 	State     string `json:"state"`
 	Latency   int    `json:"latency_ms"`
 	Cloud     int    `json:"cloud_latency_ms,omitempty"` // 海外机房测的，仅作参考
+	Stat      string `json:"stat,omitempty"`     // 本机实测画像：p50/p95/丢包
 	Reach     string `json:"reach"`
 	Sources   int    `json:"sources"`
 	Online    bool   `json:"online"`

@@ -10,6 +10,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,9 +29,37 @@ const (
 )
 
 type probeRecord struct {
-	OK        bool      `json:"ok"`
-	LatencyMS int       `json:"latency_ms,omitempty"`
-	At        time.Time `json:"at"`
+	OK        bool `json:"ok"`
+	LatencyMS int  `json:"latency_ms,omitempty"`
+	// 多轮采样画像（旧文件里没有这些字段，读入时为 0，排序自动退回均值）：
+	// 单次均值会骗人 —— 实测见过均值 450ms、P95 6s 的节点。
+	Samples int       `json:"samples,omitempty"`
+	OKs     int       `json:"oks,omitempty"`
+	P50     int       `json:"p50_ms,omitempty"`
+	P95     int       `json:"p95_ms,omitempty"`
+	Jitter  int       `json:"jitter_ms,omitempty"`
+	Loss    float64   `json:"loss,omitempty"`
+	At      time.Time `json:"at"`
+}
+
+// sortKey 是排序与闸门共用的延迟键：有画像时用 P95（尾部），没有时退回均值。
+//
+// 为什么是 P95 而不是平均：免费节点的常见失败形态是"大部分请求快、偶发一次超时"，
+// 平均值把它藏起来了；用户体感的卡顿正是那一次。
+func (r probeRecord) sortKey() int {
+	if r.P95 > 0 {
+		return r.P95
+	}
+	return r.LatencyMS
+}
+
+// desc 给界面用的一行摘要。
+func (r probeRecord) desc() string {
+	if r.Samples == 0 {
+		return fmt.Sprintf("%dms", r.sortKey())
+	}
+	return fmt.Sprintf("p50=%d p95=%d 丢包=%.0f%% (%d/%d轮)",
+		r.P50, r.P95, r.Loss*100, r.OKs, r.Samples)
 }
 
 // LocalProbe 保存本机对各节点的协议级实测结果（落盘，重启不丢）。
@@ -63,7 +92,11 @@ func (p *LocalProbe) apply(res map[string]checker.Result) int {
 	now := time.Now()
 	p.mu.Lock()
 	for id, r := range res {
-		p.rec[id] = probeRecord{OK: r.OK, LatencyMS: r.LatencyMS, At: now}
+		p.rec[id] = probeRecord{
+			OK: r.OK, LatencyMS: r.LatencyMS, At: now,
+			Samples: r.Stats.Samples, OKs: r.Stats.OKs,
+			P50: r.Stats.P50, P95: r.Stats.P95, Jitter: r.Stats.Jitter, Loss: r.Stats.Loss,
+		}
 	}
 	n := len(res)
 	p.mu.Unlock()
@@ -71,6 +104,37 @@ func (p *LocalProbe) apply(res map[string]checker.Result) int {
 		p.save()
 	}
 	return n
+}
+
+// Scan 对 nodes 跑一轮真实协议握手（每批 probeChunk 个入站并发验证），
+// 每批内对每个节点连续采样 samples 轮（同一个核心进程，不重复启停）。
+// 返回（实际检测数, 其中可用数）。sing-box 缺失时返回 0，调用方降级。
+func (p *LocalProbe) Scan(nodes []*model.Node, singboxPath string, samples int, logf func(string, ...any)) (int, int) {
+	if len(nodes) == 0 {
+		return 0, 0
+	}
+	if _, err := os.Stat(singboxPath); err != nil {
+		if logf != nil {
+			logf("[LOCAL] 未找到核心 %s，跳过本地协议级测活", singboxPath)
+		}
+		return 0, 0
+	}
+	if samples < 1 {
+		samples = 1
+	}
+	vals := make([]model.Node, 0, len(nodes))
+	for _, n := range nodes {
+		vals = append(vals, *n)
+	}
+	res := checker.DeepRounds(vals, singboxPath, probeBasePort, probeChunk, samples, logf)
+	ok := 0
+	for _, r := range res {
+		if r.OK {
+			ok++
+		}
+	}
+	p.apply(res)
+	return len(res), ok
 }
 
 func (p *LocalProbe) save() error {
@@ -117,7 +181,7 @@ func (p *LocalProbe) UsableCount() int {
 //
 // 分批是必须的：一批就是一个核心进程带 64 个入站/出站对，
 // 一次全量会把进程句柄与临时端口打爆，而且中途无法向界面汇报进度。
-func (p *LocalProbe) ScanPool(nodes []*model.Node, singboxPath string,
+func (p *LocalProbe) ScanPool(nodes []*model.Node, singboxPath string, samples int,
 	progress func(done, usable, total int), logf func(string, ...any)) (int, int) {
 	due := p.Due(nodes, len(nodes))
 	total := len(due)
@@ -127,7 +191,7 @@ func (p *LocalProbe) ScanPool(nodes []*model.Node, singboxPath string,
 		if end > total {
 			end = total
 		}
-		n, ok := p.Scan(due[off:end], singboxPath, logf)
+		n, ok := p.Scan(due[off:end], singboxPath, samples, logf)
 		tested += n
 		usable += ok
 		if progress != nil {
@@ -143,34 +207,7 @@ func (p *LocalProbe) Lookup(id string) (ok bool, latencyMS int, seen bool) {
 	if !seen {
 		return false, 0, false
 	}
-	return r.OK, r.LatencyMS, true
-}
-
-// Scan 对 nodes 跑一轮真实协议握手（每批 probeChunk 个入站并发验证），
-// 结果入库。返回（实际检测数, 其中可用数）。sing-box 缺失时返回 0，调用方降级。
-func (p *LocalProbe) Scan(nodes []*model.Node, singboxPath string, logf func(string, ...any)) (int, int) {
-	if len(nodes) == 0 {
-		return 0, 0
-	}
-	if _, err := os.Stat(singboxPath); err != nil {
-		if logf != nil {
-			logf("[LOCAL] 未找到核心 %s，跳过本地协议级测活", singboxPath)
-		}
-		return 0, 0
-	}
-	vals := make([]model.Node, 0, len(nodes))
-	for _, n := range nodes {
-		vals = append(vals, *n)
-	}
-	res := checker.Deep(vals, singboxPath, probeBasePort, probeChunk, logf)
-	ok := 0
-	for _, r := range res {
-		if r.OK {
-			ok++
-		}
-	}
-	p.apply(res)
-	return len(res), ok
+	return r.OK, r.sortKey(), true
 }
 
 // Due 从候选里挑出"该重测"的节点：没测过、或结果已超过 probeFresh 的。
@@ -205,7 +242,7 @@ func (p *LocalProbe) Rank(nodes []*model.Node) []*model.Node {
 		b := bucket{node: n, rank: 1, seq: i}
 		if r, ok := p.record(n.ID); ok {
 			if r.OK {
-				b.rank, b.lat = 0, r.LatencyMS
+				b.rank, b.lat = 0, r.sortKey()
 			} else {
 				b.rank = 2
 			}
@@ -256,7 +293,7 @@ func (p *LocalProbe) Gate(nodes []*model.Node, maxMS int) (kept []*model.Node, o
 		switch {
 		case !seen || !r.OK:
 			continue // 未测/实测失败：不参与组批，交给 Rank 与 TCP 预筛兜底
-		case r.LatencyMS > maxMS:
+		case r.sortKey() > maxMS:
 			over++
 			slow = append(slow, n)
 		default:
@@ -332,4 +369,13 @@ func (p *LocalProbe) KnownGood(nodes []*model.Node) (int, int) {
 		}
 	}
 	return good, best
+}
+
+// Describe 返回某节点本机实测画像的一行摘要（无记录时 seen=false）。
+func (p *LocalProbe) Describe(id string) (string, bool) {
+	r, seen := p.record(id)
+	if !seen {
+		return "", false
+	}
+	return r.desc(), true
 }

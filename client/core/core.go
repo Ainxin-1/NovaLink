@@ -126,7 +126,7 @@ func (m *Manager) ProbePool(nodes []*model.Node, progress func(done, usable, tot
 	if logf != nil {
 		logf("[LOCAL] 本机协议级实测开始：%d 个候选（真实握手 + 取回外网内容，批 %d）", len(nodes), probeChunk)
 	}
-	return m.localProbe.ScanPool(nodes, m.set().SingBoxPath, progress, logf)
+	return m.localProbe.ScanPool(nodes, m.set().SingBoxPath, m.set().ProbeSamples, progress, logf)
 }
 
 // SetFailoverPool 设置候选池快照：按健康分排序（任务书第七/十二节，
@@ -185,7 +185,7 @@ func (m *Manager) SetFailoverPoolLocal(nodes []*model.Node, logf func(string, ..
 				logf("[POOL] %d 分钟内的实测可用节点仅 %d 个（组批需 %d 个），先复测 %d 个候选再组批",
 					int(probeFresh.Minutes()), fresh, minGroupRedundancy, len(recheck))
 			}
-			m.localProbe.ScanPool(recheck, m.set().SingBoxPath, nil, logf)
+			m.localProbe.ScanPool(recheck, m.set().SingBoxPath, m.set().ProbeSamples, nil, logf)
 			g2, o2 := m.localProbe.Gate(all, maxLat)
 			if len(g2) > 0 {
 				gated = g2

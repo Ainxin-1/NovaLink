@@ -11,13 +11,6 @@ import (
 	"novanode/model"
 )
 
-// Result 是单个节点的粗筛结果。
-type Result struct {
-	ID        string
-	OK        bool
-	LatencyMS int
-}
-
 // TCP 并发对节点地址做 TCP 连通性测试。
 // 这是服务端环境下的粗筛，结果不代表用户设备上的真实可用性。
 func TCP(nodes []model.Node, timeout time.Duration, workers int) map[string]Result {

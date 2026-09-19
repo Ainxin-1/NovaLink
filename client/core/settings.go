@@ -19,6 +19,9 @@ type Settings struct {
 	// MaxNodeLatencyMS 延迟闸门：本机实测超过该值的节点不进候选组
 	// （0 = 不设闸门）。与管线的"可用线"同口径，默认 800ms。
 	MaxNodeLatencyMS int `json:"max_node_latency_ms"`
+	// ProbeSamples 每个节点连续采样轮数（默认 5，1=退回单轮）。
+	// 只有画像数据齐了才谈得上按 P95/丢包排序；单轮时这些字段为 0，排序自动退回均值。
+	ProbeSamples int `json:"probe_samples"`
 }
 
 // LoadSettings 读取设置；不存在时按所在目录生成默认值。
@@ -63,6 +66,7 @@ func defaultSettings(dataDir string) *Settings {
 		ProxyPort:        7890,
 		AutoSysProxy:     true,
 		MaxNodeLatencyMS: 800,
+		ProbeSamples:     5,
 	}
 }
 
