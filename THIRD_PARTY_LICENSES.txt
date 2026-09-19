@@ -32,12 +32,24 @@ NovaLink 合规方式：
 ------------------------------------------------------------------------
 预登记 2（尚未集成，仅备案）
 ------------------------------------------------------------------------
-组件名称：mihomo（备选核心）
+组件名称：mihomo（备选核心，尚未集成）
 项目地址：https://github.com/MetaCubeX/mihomo
-许可证：MIT
-备注：若 Android 端不接受 GPLv3 开源约束，改用 mihomo 需重新验证；
-  注意其许可证要求下游项目名称不得包含 "Mihomo" 字样
-登记日期：2026-09-12
+许可证：GPL-3.0
+  —— 更正记录（2026-09-19）：本条原写 MIT，来源是 GitHub 的 license 自动
+  识别，而它读的是**默认分支 main**。该仓库 main 上是一个同名但无关的
+  Python 项目（"mihomo: A simple python pydantic model for Honkai: Star
+  Rail parsed data from the Mihomo API"，Copyright 2023 KT，MIT），
+  仓库简介与 topics 也已被换成该项目。
+  真正的代理内核在 Meta / Alpha 分支：LICENSE = GPL，go.mod =
+  module github.com/metacubex/mihomo，release 资产仍由本仓库发布
+  （核对时间 2026-09-19：v1.19.31 / 2026-09-14，Meta 分支最后提交 2026-09-14）。
+集成前提（若日后改用 mihomo，三条都必做）：
+  1. 禁止按名字搜索或克隆默认分支取值；必须钉死 repo + branch/tag +
+     资产文件名 + SHA256，与 sing-box 一样按显式 tag 下载。
+  2. 许可证按 GPL-3.0 处理：若 Android 端不接受 GPLv3 约束则不能用它；
+     且其许可证要求下游项目名称不得包含 "Mihomo" 字样。
+  3. 不要拿 GitHub 的 license 字段当合规依据 —— 这个仓库就是反例。
+登记日期：2026-09-12（2026-09-19 更正许可证并补充核对依据）
 
 ------------------------------------------------------------------------
 预登记 3（仅消费公开数据，不使用其代码）
@@ -48,6 +60,23 @@ NovaLink 合规方式：
 许可证注意：V2RayAggregator、Epodonios 为 GPL-3.0 —— 只取数据、
   不取代码；AutoMergePublicNodes 无许可证 —— 只取数据、不取代码
 登记日期：2026-09-12
+
+------------------------------------------------------------------------
+集成组件 5（随安装包分发的数据文件）
+------------------------------------------------------------------------
+组件名称：sing-geoip / sing-geosite 规则集（geoip-cn.srs、geosite-cn.srs）
+项目地址：https://github.com/SagerNet/sing-geoip
+          https://github.com/SagerNet/sing-geosite
+落地位置：client/core/rules/（go:embed 打进客户端二进制，共约 90KB）
+用途：客户端国内直连分流（route.rule_set）
+许可证：两仓库自带 LICENSE，GitHub API 识别为 NOASSERTION（非标准 SPDX），
+  上游数据源自 MaxMind GeoLite2（CC BY-SA 4.0）等公开数据，
+  分发时需保留出处声明 —— 即本条
+获取方式：rule-set 分支的二进制产物，未修改字节内容
+  校验：sing-box 1.14.0 `rule-set match` 语义验证通过
+  （命中 baidu/cctv/taobao、114.114.114.114/223.5.5.5；
+   不命中 google/youtube/github、8.8.8.8/Cloudflare 段）
+登记日期：2026-09-19
 
 ========================================================================
 台账结束
