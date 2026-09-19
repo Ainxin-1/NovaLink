@@ -368,6 +368,11 @@ func (a *app) handleCheck(w http.ResponseWriter, r *http.Request) {
 // 为什么不再用 TCP 扫描：TCP 活着与能翻墙是两件事（实测 783 个 TCP 存活
 // 只有 18 个真通），而全池 TCP 扫一遍要 45 分钟。改成协议级后每批 64 个
 // 并发只要 10~50 秒，且结论真正可用于选路。
+//
+// 候选为什么取 cache.Publishable 而不是全池：试过扫全量精简池 3,000 个
+// （2026-09-19 实测），耗时 8m58s，可用节点仍是 11 个 —— 与只扫已发布的
+// 800 个（1m52s）结果完全相同，多出来的 2,200 个从未被验证过的尾部节点
+// 贡献 0。广度不是瓶颈，所以按 5 倍时间零收益回退。
 func (a *app) probePool(pool *model.Pool) {
 	cands := cache.Publishable(pool)
 	if len(cands) == 0 {
