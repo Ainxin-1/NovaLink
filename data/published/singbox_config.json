@@ -15,6 +15,13 @@
       "default": "auto",
       "outbounds": [
         "auto",
+        "c97fc7b7107d0fb4",
+        "136894687f2e9e55",
+        "a0ef78ebc1aa7b09",
+        "2c5c7c46264cc790",
+        "1df5754d74669203",
+        "63b50fc95e10a5f0",
+        "40c8d11c663400fe",
         "a8df907d28968fd5",
         "ec4cac505d793507",
         "445d406ff4f23fe7",
@@ -338,6 +345,13 @@
     {
       "interval": "10m",
       "outbounds": [
+        "c97fc7b7107d0fb4",
+        "136894687f2e9e55",
+        "a0ef78ebc1aa7b09",
+        "2c5c7c46264cc790",
+        "1df5754d74669203",
+        "63b50fc95e10a5f0",
+        "40c8d11c663400fe",
         "a8df907d28968fd5",
         "ec4cac505d793507",
         "445d406ff4f23fe7",
@@ -658,6 +672,106 @@
       "tag": "auto",
       "type": "urltest",
       "url": "https://www.gstatic.com/generate_204"
+    },
+    {
+      "method": "chacha20-ietf-poly1305",
+      "password": "c58d16e593d44f42",
+      "server": "158.173.221.214",
+      "server_port": 11001,
+      "tag": "c97fc7b7107d0fb4",
+      "type": "shadowsocks"
+    },
+    {
+      "method": "aes-256-cfb",
+      "password": "TyNkGmp9hs6eGpDK",
+      "server": "91.201.65.122",
+      "server_port": 9092,
+      "tag": "136894687f2e9e55",
+      "type": "shadowsocks"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "95.85.252.223",
+      "server_port": 8443,
+      "tag": "a0ef78ebc1aa7b09",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "4IFrK2mEJSNBJEqyiWLvPgXGNjV8vK49SxPI0RmheWg"
+        },
+        "server_name": "www.amazon.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "06765620-7fd9-4927-bf74-fa4b551f26b7"
+    },
+    {
+      "server": "91.107.190.175",
+      "server_port": 8080,
+      "tag": "2c5c7c46264cc790",
+      "transport": {
+        "path": "/",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "11af1c47-865a-47c6-92ff-118013655d78"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "83.147.18.3",
+      "server_port": 443,
+      "tag": "1df5754d74669203",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "3iVJAIGPx6JMlhlRmfpGrHkSmLpHJ4CPvBBH7KsFrFA",
+          "short_id": "fd8cf7e1173f0edb"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "9f61cdf4-810d-4052-bbc7-2da0c8e20104"
+    },
+    {
+      "server": "172.67.215.180",
+      "server_port": 443,
+      "tag": "63b50fc95e10a5f0",
+      "tls": {
+        "alpn": [
+          "http/1.1"
+        ],
+        "enabled": true,
+        "server_name": "2.i0-6.de5.Net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "2.I0-6.DE5.neT"
+        },
+        "path": "/FbLtzaav4GSW7GPL6LUGsEkZ",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "62e499fe-458e-47da-a0c8-cae69144ebe9"
+    },
+    {
+      "server": "18.135.254.77",
+      "server_port": 22224,
+      "tag": "40c8d11c663400fe",
+      "type": "vless",
+      "uuid": "e4514801-0d5a-42ba-869f-39bd605aef9e"
     },
     {
       "flow": "xtls-rprx-vision",
