@@ -1,19 +1,19 @@
 {
   "by_protocol": {
-    "ss": 26,
-    "trojan": 79,
-    "vless": 233,
-    "vmess": 36
+    "ss": 31,
+    "trojan": 82,
+    "vless": 230,
+    "vmess": 37
   },
   "by_state": {
-    "AVAILABLE": 348,
-    "DEGRADED": 5550,
-    "EXPIRED": 8459,
-    "FAILED": 267,
-    "NEW": 376
+    "AVAILABLE": 354,
+    "DEGRADED": 5368,
+    "EXPIRED": 8669,
+    "FAILED": 270,
+    "NEW": 339
   },
   "pool_total": 15000,
-  "published": 374,
+  "published": 380,
   "slim_total": 3000,
-  "updated": "2026-10-04T20:19:47Z"
+  "updated": "2026-10-04T23:46:36Z"
 }
