@@ -15,29 +15,44 @@
       "default": "auto",
       "outbounds": [
         "auto",
-        "c4d77ffa4cc9e48d",
-        "b00fc9a81b6c8c65",
-        "3bc3133271a87ccb",
-        "90ad4dc608e73344",
+        "70602e9e18ae47c5",
+        "51172dd47e0d0ca7",
+        "97818b4b124dff00",
+        "4476fb0c00eac33b",
+        "48458facf029863f",
+        "9b0ce9fbec49de9a",
+        "fab91ee65544d580",
+        "535151d68eb47187",
+        "1dada9c8092f5587",
+        "982742af2c8e27b5",
+        "733943facb38e037",
+        "b6aabe041b03c466",
+        "67dfe788f831d1c6",
+        "f7ac9e9b4da410fc",
+        "f4852445dc01d0c8",
+        "b7f1a5781a6612c1",
+        "2c16e33fde5d1184",
+        "3a04a94424a36d0f",
+        "3f48d1161988b591",
+        "1e571703dd8b621c",
+        "947a76c5dfc10f63",
+        "9d9a3ee627a4834a",
+        "b37acb14b9d19de3",
+        "03fd355b0c2086ac",
+        "425eef8257a6ffc6",
+        "a88663e864ff3812",
+        "d1fb47d96fda0755",
+        "fa356a07426a17cf",
+        "6cd022c09b651f8b",
+        "4890baf3f801c509",
+        "acef6cb72df9714e",
         "64bb5e859ad5d112",
-        "fbb5970123800257",
         "46e9b16ff62403c2",
         "279ac5bac1389a96",
         "b362c426583c5d6c",
         "cb70d1a1891ea5d8",
         "bb4f78b6f8c026f8",
         "f386baf6a973181f",
-        "127fa4a3f3d1e805",
-        "ad88c56b372428af",
-        "c796e4a4b21b7e9a",
-        "845e67435b40a521",
-        "2328c6f87abeb9df",
-        "188dee9883fd9dd5",
-        "4c9305ecd2faaa83",
-        "159c8d5a2cdefefb",
-        "4cb854d0253e89e5",
-        "47d7103d9fe4c6e3",
-        "f5f0327c96d60577",
         "269ccc8fde397649",
         "7b78263d2721d2bb",
         "a8500e4b78c7017f",
@@ -46,52 +61,16 @@
         "49656f3f03df4238",
         "6dad1f78b529f012",
         "20b7d8e35e4bf786",
-        "e060fa9e59bd8b75",
-        "41c2560f7785614a",
-        "a0dc13b138534e61",
-        "aef107883c24fcbd",
-        "d80b2ac36fe37f8b",
-        "34f30745a7a35fac",
-        "9f401da9ea438768",
-        "ad6cc265e5492419",
-        "072fff6789c7f302",
-        "8377f362f663f4cd",
-        "52c9c2c0f9e89f21",
-        "50d7b1effc0a267d",
-        "249100b998772ed8",
-        "7dcb59201ab79afe",
-        "ea3ee97bb69eb9ea",
         "d47c2a7f0e5db72f",
         "e5f7dce25d5d872d",
         "ae38c0f15cda6b02",
-        "997696764dd2ff1f",
-        "e8ff71c3d8964008",
-        "c1483218c224381d",
-        "c9290aaeec5806ce",
-        "3a7dea83b0c43005",
-        "d88cc35af49ddd94",
-        "b317d41fb5a2822a",
         "fb8068863d97df0b",
-        "12ad38945ffbe032",
-        "667e5fbb1771a847",
-        "fe01f428e0c55085",
-        "4865f1c0ce395472",
-        "87e93c4e92d60f3c",
-        "bcc1c500a4257c28",
         "cb9129530dd48007",
-        "0df561dda738da40",
-        "dffd5ce4e87c452c",
-        "83b98d61728bdd9b",
-        "b49706b459b8f6a2",
         "0d04464041ff06e6",
-        "820a0dabdc0e3eb4",
         "be808510964e0b68",
         "0f74748ffda8417a",
-        "55aa79aac60bb183",
         "d5cd2e8210ac59d9",
         "ce265ac8f5d58782",
-        "7c82c0b777b925d7",
-        "44ad9eb1f24f8544",
         "be58f84fe05962fe",
         "3362045e08c92502",
         "5b88591a780e506c",
@@ -101,38 +80,20 @@
         "ce98ceb2bd351ee1",
         "99bc0f9e1fe08f10",
         "df582c2d25e229aa",
-        "d0f86ae557c6ba43",
         "34e50317ec2d0797",
         "77bcd6c91e3d7f25",
         "b90a474b02639362",
         "25696c8f31833132",
-        "c4caaf7b1aeb9879",
-        "ca3b808c73267c9c",
-        "0d1f95855519e26d",
-        "4a1442b927e1010a",
-        "78a512e4c9310f7d",
         "0397800d77ae091f",
-        "67089ef9cc387c4c",
         "593e421b01f5781b",
-        "12a4d4f8858e0795",
-        "45e9be5031c5b4df",
-        "3398ab7746181e27",
-        "9ddfdccfd13706b0",
         "dc0cb557872ae0ee",
         "a95879b59d320ccb",
         "e9dc42165ca56632",
         "327d35d91d0abfc6",
         "c6be892040863a75",
-        "4dbedbdd064cf196",
-        "97683ab62ccd56dc",
         "2db94aa31923637c",
-        "2725512687ff68d5",
-        "71375d47b4ea78b1",
-        "8db8ef1b1c15167e",
-        "2d7c6a5da7ee50d9",
         "9ac8555608d8ad5a",
         "9536120b017601ed",
-        "11ebc854be5e1641",
         "44b07caf4ead3158",
         "ec306e43350ef658",
         "15981763e443004f",
@@ -151,22 +112,15 @@
         "57e3449291882cc5",
         "de537d6f4e20d646",
         "52b6adf8cc33dffe",
-        "7757f7b67f5b9953",
         "9ea76674079c71cf",
-        "2c79ce3505a94de0",
         "d1095b84d34ec71c",
-        "88614ddc07a86b68",
         "688bf33af8ae4705",
         "6a1d7768d6b2d00c",
-        "146073b8c4dcc9a4",
         "5f136bb5b30493a0",
-        "851df08aa5b53a3b",
         "d54bd8a607f9c125",
         "3b315a7a58af5d09",
         "7787ecf7a7f60972",
         "a0b45e6439f27847",
-        "0f10bedaeac7539f",
-        "81a4aceebb1704fb",
         "c28ecda5c3abbc9a",
         "3731a7f05e4b5426",
         "159cf0dbe2858cd4",
@@ -174,31 +128,21 @@
         "792e17ce9d4fe772",
         "9c420e4bfd5d0c8a",
         "d5590a62f5706839",
-        "577609f2d60a0e1d",
         "1b05318a1417a9cc",
         "23166ea3bb624ed6",
         "e7c3acfe5692866e",
-        "d63ba1d16586c223",
         "cc6f887189f80b25",
         "506f53e693340999",
-        "97b0ddfe2f69a3ca",
         "8701fdc9044977a4",
-        "acbcf5dc76a0bdf5",
         "6dbe66d619fd952f",
         "05e3cf6a0211aa32",
-        "7044f1613e221e09",
-        "dfb92514d05b0237",
-        "20a09e27538083ec",
-        "d67e72fc59a2d553",
         "e7a5e39bcef95032",
         "e0905af8aa04d674",
         "8e994226f71b4193",
         "ae7ad5bda51969a4",
         "62b8c5cab20b6729",
         "7dacb6ac4729a09d",
-        "dd884c424b1bf07e",
         "b1dfae70a1945d78",
-        "1895bfea771f2fec",
         "ce8a382cfe80251c",
         "136894687f2e9e55",
         "1df98d00863bf1f6",
@@ -206,24 +150,18 @@
         "c964280f43b55b84",
         "5308dc81882275c0",
         "d9b59f03ac8b3f9f",
-        "7720e18208b5390e",
         "09973bab804a9be1",
         "fafdcccefa7356c4",
-        "b18d249e407c2bb3",
         "de1cfed68a6e0c52",
-        "d583fea21ded287f",
         "af6500025bed0b5e",
         "06085fba1ef61771",
         "4df95ca920e65f22",
         "8de90cce2d165221",
         "cbc1043620b2b5b1",
-        "26dc1592d8b2d72f",
         "fc33c6e4ea30b22c",
         "551ad2fcd454d972",
         "0e442abc8e5ed7d1",
-        "2e1e908d00a1b4e2",
         "ccfffe40d5c6d72f",
-        "8bea3b6d31e4388f",
         "456c2d755c002e81",
         "8f76d37bc00a7497",
         "d7cc12c7770debd2",
@@ -233,9 +171,7 @@
         "99296ef098fecb10",
         "06124c7d7f75cedb",
         "49e52e741ac723c5",
-        "8e8ab69ae741d4ca",
         "274f3e80fc5ad996",
-        "39e14840d7439ca0",
         "595bc7689397bc02",
         "c1c349bb405469d9",
         "7e700b2f2906c963",
@@ -251,9 +187,7 @@
         "c2e659e5d1acd339",
         "20bf6a640503e84c",
         "b335635c294ac5c3",
-        "701022ebc77e5264",
         "45f251204c5be781",
-        "104381239dbd832c",
         "657a0477e99887e5",
         "35917dabac5b56b3",
         "a950c22187d53152",
@@ -270,11 +204,6 @@
         "d50e540d37d54522",
         "96b6974d303750ec",
         "31f202ce67eab85c",
-        "62b874c66a4e8327",
-        "dc75205b3be29e4f",
-        "80241bf74006d451",
-        "d1baf12c75004101",
-        "5cc54048940be5ec",
         "6ddffb9c8bf71847",
         "0e18718d57cc8aec",
         "f83144a3eaeb4f9f",
@@ -289,7 +218,6 @@
         "5d189f24ca7721c0",
         "a40b957c31429536",
         "d487774e80edd2c5",
-        "ae042ef960632824",
         "9ce4986298795599",
         "f7b5cedad64a1caa",
         "6f05efc84113eaca",
@@ -334,7 +262,6 @@
         "8422e450768baaaa",
         "84002e0def653b05",
         "f9e040995bc5179b",
-        "5bd92c8aaefc00da",
         "a9430bb1547ccf49",
         "84dc23e2b786eb05",
         "970de6865e891930",
@@ -382,29 +309,44 @@
     {
       "interval": "10m",
       "outbounds": [
-        "c4d77ffa4cc9e48d",
-        "b00fc9a81b6c8c65",
-        "3bc3133271a87ccb",
-        "90ad4dc608e73344",
+        "70602e9e18ae47c5",
+        "51172dd47e0d0ca7",
+        "97818b4b124dff00",
+        "4476fb0c00eac33b",
+        "48458facf029863f",
+        "9b0ce9fbec49de9a",
+        "fab91ee65544d580",
+        "535151d68eb47187",
+        "1dada9c8092f5587",
+        "982742af2c8e27b5",
+        "733943facb38e037",
+        "b6aabe041b03c466",
+        "67dfe788f831d1c6",
+        "f7ac9e9b4da410fc",
+        "f4852445dc01d0c8",
+        "b7f1a5781a6612c1",
+        "2c16e33fde5d1184",
+        "3a04a94424a36d0f",
+        "3f48d1161988b591",
+        "1e571703dd8b621c",
+        "947a76c5dfc10f63",
+        "9d9a3ee627a4834a",
+        "b37acb14b9d19de3",
+        "03fd355b0c2086ac",
+        "425eef8257a6ffc6",
+        "a88663e864ff3812",
+        "d1fb47d96fda0755",
+        "fa356a07426a17cf",
+        "6cd022c09b651f8b",
+        "4890baf3f801c509",
+        "acef6cb72df9714e",
         "64bb5e859ad5d112",
-        "fbb5970123800257",
         "46e9b16ff62403c2",
         "279ac5bac1389a96",
         "b362c426583c5d6c",
         "cb70d1a1891ea5d8",
         "bb4f78b6f8c026f8",
         "f386baf6a973181f",
-        "127fa4a3f3d1e805",
-        "ad88c56b372428af",
-        "c796e4a4b21b7e9a",
-        "845e67435b40a521",
-        "2328c6f87abeb9df",
-        "188dee9883fd9dd5",
-        "4c9305ecd2faaa83",
-        "159c8d5a2cdefefb",
-        "4cb854d0253e89e5",
-        "47d7103d9fe4c6e3",
-        "f5f0327c96d60577",
         "269ccc8fde397649",
         "7b78263d2721d2bb",
         "a8500e4b78c7017f",
@@ -413,52 +355,16 @@
         "49656f3f03df4238",
         "6dad1f78b529f012",
         "20b7d8e35e4bf786",
-        "e060fa9e59bd8b75",
-        "41c2560f7785614a",
-        "a0dc13b138534e61",
-        "aef107883c24fcbd",
-        "d80b2ac36fe37f8b",
-        "34f30745a7a35fac",
-        "9f401da9ea438768",
-        "ad6cc265e5492419",
-        "072fff6789c7f302",
-        "8377f362f663f4cd",
-        "52c9c2c0f9e89f21",
-        "50d7b1effc0a267d",
-        "249100b998772ed8",
-        "7dcb59201ab79afe",
-        "ea3ee97bb69eb9ea",
         "d47c2a7f0e5db72f",
         "e5f7dce25d5d872d",
         "ae38c0f15cda6b02",
-        "997696764dd2ff1f",
-        "e8ff71c3d8964008",
-        "c1483218c224381d",
-        "c9290aaeec5806ce",
-        "3a7dea83b0c43005",
-        "d88cc35af49ddd94",
-        "b317d41fb5a2822a",
         "fb8068863d97df0b",
-        "12ad38945ffbe032",
-        "667e5fbb1771a847",
-        "fe01f428e0c55085",
-        "4865f1c0ce395472",
-        "87e93c4e92d60f3c",
-        "bcc1c500a4257c28",
         "cb9129530dd48007",
-        "0df561dda738da40",
-        "dffd5ce4e87c452c",
-        "83b98d61728bdd9b",
-        "b49706b459b8f6a2",
         "0d04464041ff06e6",
-        "820a0dabdc0e3eb4",
         "be808510964e0b68",
         "0f74748ffda8417a",
-        "55aa79aac60bb183",
         "d5cd2e8210ac59d9",
         "ce265ac8f5d58782",
-        "7c82c0b777b925d7",
-        "44ad9eb1f24f8544",
         "be58f84fe05962fe",
         "3362045e08c92502",
         "5b88591a780e506c",
@@ -468,38 +374,20 @@
         "ce98ceb2bd351ee1",
         "99bc0f9e1fe08f10",
         "df582c2d25e229aa",
-        "d0f86ae557c6ba43",
         "34e50317ec2d0797",
         "77bcd6c91e3d7f25",
         "b90a474b02639362",
         "25696c8f31833132",
-        "c4caaf7b1aeb9879",
-        "ca3b808c73267c9c",
-        "0d1f95855519e26d",
-        "4a1442b927e1010a",
-        "78a512e4c9310f7d",
         "0397800d77ae091f",
-        "67089ef9cc387c4c",
         "593e421b01f5781b",
-        "12a4d4f8858e0795",
-        "45e9be5031c5b4df",
-        "3398ab7746181e27",
-        "9ddfdccfd13706b0",
         "dc0cb557872ae0ee",
         "a95879b59d320ccb",
         "e9dc42165ca56632",
         "327d35d91d0abfc6",
         "c6be892040863a75",
-        "4dbedbdd064cf196",
-        "97683ab62ccd56dc",
         "2db94aa31923637c",
-        "2725512687ff68d5",
-        "71375d47b4ea78b1",
-        "8db8ef1b1c15167e",
-        "2d7c6a5da7ee50d9",
         "9ac8555608d8ad5a",
         "9536120b017601ed",
-        "11ebc854be5e1641",
         "44b07caf4ead3158",
         "ec306e43350ef658",
         "15981763e443004f",
@@ -518,22 +406,15 @@
         "57e3449291882cc5",
         "de537d6f4e20d646",
         "52b6adf8cc33dffe",
-        "7757f7b67f5b9953",
         "9ea76674079c71cf",
-        "2c79ce3505a94de0",
         "d1095b84d34ec71c",
-        "88614ddc07a86b68",
         "688bf33af8ae4705",
         "6a1d7768d6b2d00c",
-        "146073b8c4dcc9a4",
         "5f136bb5b30493a0",
-        "851df08aa5b53a3b",
         "d54bd8a607f9c125",
         "3b315a7a58af5d09",
         "7787ecf7a7f60972",
         "a0b45e6439f27847",
-        "0f10bedaeac7539f",
-        "81a4aceebb1704fb",
         "c28ecda5c3abbc9a",
         "3731a7f05e4b5426",
         "159cf0dbe2858cd4",
@@ -541,31 +422,21 @@
         "792e17ce9d4fe772",
         "9c420e4bfd5d0c8a",
         "d5590a62f5706839",
-        "577609f2d60a0e1d",
         "1b05318a1417a9cc",
         "23166ea3bb624ed6",
         "e7c3acfe5692866e",
-        "d63ba1d16586c223",
         "cc6f887189f80b25",
         "506f53e693340999",
-        "97b0ddfe2f69a3ca",
         "8701fdc9044977a4",
-        "acbcf5dc76a0bdf5",
         "6dbe66d619fd952f",
         "05e3cf6a0211aa32",
-        "7044f1613e221e09",
-        "dfb92514d05b0237",
-        "20a09e27538083ec",
-        "d67e72fc59a2d553",
         "e7a5e39bcef95032",
         "e0905af8aa04d674",
         "8e994226f71b4193",
         "ae7ad5bda51969a4",
         "62b8c5cab20b6729",
         "7dacb6ac4729a09d",
-        "dd884c424b1bf07e",
         "b1dfae70a1945d78",
-        "1895bfea771f2fec",
         "ce8a382cfe80251c",
         "136894687f2e9e55",
         "1df98d00863bf1f6",
@@ -573,24 +444,18 @@
         "c964280f43b55b84",
         "5308dc81882275c0",
         "d9b59f03ac8b3f9f",
-        "7720e18208b5390e",
         "09973bab804a9be1",
         "fafdcccefa7356c4",
-        "b18d249e407c2bb3",
         "de1cfed68a6e0c52",
-        "d583fea21ded287f",
         "af6500025bed0b5e",
         "06085fba1ef61771",
         "4df95ca920e65f22",
         "8de90cce2d165221",
         "cbc1043620b2b5b1",
-        "26dc1592d8b2d72f",
         "fc33c6e4ea30b22c",
         "551ad2fcd454d972",
         "0e442abc8e5ed7d1",
-        "2e1e908d00a1b4e2",
         "ccfffe40d5c6d72f",
-        "8bea3b6d31e4388f",
         "456c2d755c002e81",
         "8f76d37bc00a7497",
         "d7cc12c7770debd2",
@@ -600,9 +465,7 @@
         "99296ef098fecb10",
         "06124c7d7f75cedb",
         "49e52e741ac723c5",
-        "8e8ab69ae741d4ca",
         "274f3e80fc5ad996",
-        "39e14840d7439ca0",
         "595bc7689397bc02",
         "c1c349bb405469d9",
         "7e700b2f2906c963",
@@ -618,9 +481,7 @@
         "c2e659e5d1acd339",
         "20bf6a640503e84c",
         "b335635c294ac5c3",
-        "701022ebc77e5264",
         "45f251204c5be781",
-        "104381239dbd832c",
         "657a0477e99887e5",
         "35917dabac5b56b3",
         "a950c22187d53152",
@@ -637,11 +498,6 @@
         "d50e540d37d54522",
         "96b6974d303750ec",
         "31f202ce67eab85c",
-        "62b874c66a4e8327",
-        "dc75205b3be29e4f",
-        "80241bf74006d451",
-        "d1baf12c75004101",
-        "5cc54048940be5ec",
         "6ddffb9c8bf71847",
         "0e18718d57cc8aec",
         "f83144a3eaeb4f9f",
@@ -656,7 +512,6 @@
         "5d189f24ca7721c0",
         "a40b957c31429536",
         "d487774e80edd2c5",
-        "ae042ef960632824",
         "9ce4986298795599",
         "f7b5cedad64a1caa",
         "6f05efc84113eaca",
@@ -701,7 +556,6 @@
         "8422e450768baaaa",
         "84002e0def653b05",
         "f9e040995bc5179b",
-        "5bd92c8aaefc00da",
         "a9430bb1547ccf49",
         "84dc23e2b786eb05",
         "970de6865e891930",
@@ -748,37 +602,513 @@
       "url": "https://www.gstatic.com/generate_204"
     },
     {
+      "server": "172.67.216.233",
+      "server_port": 443,
+      "tag": "70602e9e18ae47c5",
+      "tls": {
+        "alpn": [
+          "http/1.1"
+        ],
+        "enabled": true,
+        "server_name": "J3Bx1S9MK2syLW66yJ-hSk.TJsJrKk8GbHTS0Q5-0Os.wOrKeRS.DEv",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "j3bx1s9mk2sylw66yj-hsk.tjsjrkk8gbhts0q5-0os.workers.dev"
+        },
+        "path": "/vl/uwojyr8LT2gMeHnQJVf2HntOGHsvRH3?ed=2560",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "23e34376-aa47-4c8d-97ea-02915e01fcca"
+    },
+    {
+      "server": "port2.axiomed.ir",
+      "server_port": 443,
+      "tag": "51172dd47e0d0ca7",
+      "tls": {
+        "alpn": [
+          "http/1.1"
+        ],
+        "enabled": true,
+        "server_name": "G84-nee38RYD6hElYZ6Z9qW1rm1BdL1.FornEwirAn-1056.WorkerS.dEv",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "g84-nee38ryd6helyz6z9qw1rm1bdl1.fornewiran-1056.workers.dev"
+        },
+        "path": "/vl/pmsM6vhny85OmnvYbXIpf1l?ed=2560",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "fa9ec1a9-6c24-4be2-9472-d1e2592b45b4"
+    },
+    {
       "alter_id": 0,
       "security": "auto",
-      "server": "dog-hk.kunlun01dns.com",
-      "server_port": 21041,
-      "tag": "c4d77ffa4cc9e48d",
+      "server": "185.177.229.129",
+      "server_port": 22324,
+      "tag": "97818b4b124dff00",
       "type": "vmess",
-      "uuid": "9464ca40-dd75-3742-a628-d931a9f413b2"
+      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
     },
     {
-      "method": "2022-blake3-aes-128-gcm",
-      "password": "5KZH6WIsE0lygfKRLtstGQ==:d8C1FciKoaFD6xRFbCYyFQ==",
-      "server": "Bulbul.color-panel.ir",
-      "server_port": 1080,
-      "tag": "b00fc9a81b6c8c65",
-      "type": "shadowsocks"
+      "alter_id": 0,
+      "security": "auto",
+      "server": "186.190.211.147",
+      "server_port": 22324,
+      "tag": "4476fb0c00eac33b",
+      "type": "vmess",
+      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
     },
     {
-      "method": "2022-blake3-aes-256-gcm",
-      "password": "mp6qnmHU66oG5bhOinug4uzkh+1tLLyT5gMHIo5evUA=:wkU3pzc96Bl+VD5TwzaibINc0qLdHFD4wRaQMfK+7Sw=",
-      "server": "apadana.gamingnet.ir",
-      "server_port": 57467,
-      "tag": "3bc3133271a87ccb",
-      "type": "shadowsocks"
+      "alter_id": 0,
+      "security": "auto",
+      "server": "zfd-hkv1.kunlun01dns.com",
+      "server_port": 16114,
+      "tag": "48458facf029863f",
+      "type": "vmess",
+      "uuid": "0802ac03-7973-39ef-a019-ba02de6c01e1"
     },
     {
-      "method": "2022-blake3-aes-256-gcm",
-      "password": "sUR6Ny8Y6PSvHhl/DUxconwxg6VZyFdsdfaVCvEatJo=:7bTEhHgpErKiRjE1ega+H6pcpJsNLFB0CjQseujAHrA=",
-      "server": "129.150.59.74",
-      "server_port": 14384,
-      "tag": "90ad4dc608e73344",
-      "type": "shadowsocks"
+      "alter_id": 0,
+      "security": "auto",
+      "server": "zfd-hkv2.kunlun01dns.com",
+      "server_port": 16112,
+      "tag": "9b0ce9fbec49de9a",
+      "type": "vmess",
+      "uuid": "0802ac03-7973-39ef-a019-ba02de6c01e1"
+    },
+    {
+      "server": "104.21.70.21",
+      "server_port": 8080,
+      "tag": "fab91ee65544d580",
+      "transport": {
+        "headers": {
+          "Host": "black-wildflower-dd92.72-1e8.workers.dev"
+        },
+        "path": "/pyip=ProxyIP.KR.CMLiussss.net",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "17b2ed22-5fd0-47ad-b5f0-658379379ced"
+    },
+    {
+      "server": "104.17.147.22",
+      "server_port": 8080,
+      "tag": "535151d68eb47187",
+      "transport": {
+        "headers": {
+          "Host": "zhph1zsu3ass0yd2jjmcdpynmbv.pesareshah975.workers.dev"
+        },
+        "path": "/vl/2HQNmb5VoOwqKpXPz60zvv8yQeQAS48?ed=2560",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "c44542db-493d-45dd-ad0e-4479f56e70d8"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "34.3.101.206",
+      "server_port": 443,
+      "tag": "1dada9c8092f5587",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "C4ky4RduL1cfjZ3okHXDkpD2Ns4DViMkB-mDlisBrzc",
+          "short_id": "8a17287288cf25e5"
+        },
+        "server_name": "gateway.icloud.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "c64a5cfa-0fd6-4978-b062-6e89da013260"
+    },
+    {
+      "server": "136.86.230.49",
+      "server_port": 443,
+      "tag": "982742af2c8e27b5",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "LYnDDS0AkBwVeeTyIEE5MhrTV_PZO5f1qBAbMN6z4HM",
+          "short_id": "f1955f72763eb2fb"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "dffab367-7769-4c6c-86f2-66fc6bd03003"
+    },
+    {
+      "server": "179.253.244.112",
+      "server_port": 8444,
+      "tag": "733943facb38e037",
+      "tls": {
+        "enabled": true,
+        "server_name": "us.netease.uz",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "random"
+        }
+      },
+      "type": "vless",
+      "uuid": "fd3b5215-287b-4f16-84d9-6b5854dea110"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "t14.qifei.app",
+      "server_port": 443,
+      "tag": "b6aabe041b03c466",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "0i_xAxYgSNx5NMpK2lOaWGS-CvAiD_LneYPO0MF0owo",
+          "short_id": "1a"
+        },
+        "server_name": "www.amazon.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "random"
+        }
+      },
+      "type": "vless",
+      "uuid": "b98d4c6e-6770-4a31-8256-a4750cdea0e7"
+    },
+    {
+      "password": "UX82473651",
+      "server": "ultimate-jaguar.rooster465.autos",
+      "server_port": 443,
+      "tag": "67dfe788f831d1c6",
+      "tls": {
+        "enabled": true,
+        "server_name": "ultimate-jaguar.rooster465.autos",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "trojan"
+    },
+    {
+      "server": "136.86.230.49",
+      "server_port": 443,
+      "tag": "f7ac9e9b4da410fc",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "LYnDDS0AkBwVeeTyIEE5MhrTV_PZO5f1qBAbMN6z4HM",
+          "short_id": "f1955f72763eb2fb"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "dffab367-7769-4c6c-86f2-66fc6bd03003"
+    },
+    {
+      "server": "34.29.203.135",
+      "server_port": 443,
+      "tag": "f4852445dc01d0c8",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "VL1ZiaWxae8teZWJeBAIHadbo7z1Ezu1KA2kIA1TDmk",
+          "short_id": "7dfdbf323c4ef0a8"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "0106efd7-39bf-449d-b734-a4aa758d6480"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "185.177.229.129",
+      "server_port": 22324,
+      "tag": "b7f1a5781a6612c1",
+      "type": "vmess",
+      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "186.190.211.147",
+      "server_port": 22324,
+      "tag": "2c16e33fde5d1184",
+      "type": "vmess",
+      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "57.129.132.223",
+      "server_port": 80,
+      "tag": "3a04a94424a36d0f",
+      "transport": {
+        "headers": {
+          "Host": "viber.com"
+        },
+        "path": "/vmess/",
+        "type": "ws"
+      },
+      "type": "vmess",
+      "uuid": "a25cbf11-2908-4a1b-a3a8-9a571777dca3"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "167.17.68.89",
+      "server_port": 443,
+      "tag": "3f48d1161988b591",
+      "tls": {
+        "enabled": true,
+        "server_name": "vspeedfast.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "vspeedfast.org"
+        },
+        "path": "/linkvws",
+        "type": "ws"
+      },
+      "type": "vmess",
+      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
+    },
+    {
+      "password": "UX82473651",
+      "server": "pleased-albacore.rooster465.autos",
+      "server_port": 443,
+      "tag": "1e571703dd8b621c",
+      "tls": {
+        "enabled": true,
+        "server_name": "pleased-albacore.rooster465.autos",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "trojan"
+    },
+    {
+      "password": "mitivpn",
+      "server": "199.232.78.101",
+      "server_port": 443,
+      "tag": "947a76c5dfc10f63",
+      "tls": {
+        "alpn": [
+          "http/1.1"
+        ],
+        "enabled": true,
+        "server_name": "ssl.fastly.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "mitivpn---deb--s---mitivpn-1.global.ssl.fastly.net"
+        },
+        "path": "/",
+        "type": "ws"
+      },
+      "type": "trojan"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "144.31.27.215",
+      "server_port": 43000,
+      "tag": "9d9a3ee627a4834a",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "dxCQnOekn14riFxt3vdwDNydvW47FsmwFG6BJ2mUgEg",
+          "short_id": "568d87a47271344e"
+        },
+        "server_name": "144.31.27.215",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "47f79fc1-0646-40e8-8a58-73e85d183d5a"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "185.177.229.128",
+      "server_port": 22324,
+      "tag": "b37acb14b9d19de3",
+      "type": "vmess",
+      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
+    },
+    {
+      "server": "107.189.7.176",
+      "server_port": 32752,
+      "tag": "03fd355b0c2086ac",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "pfFcQxKv4EPhCDUoZMCmTjj4FK7HHQg_me-In3bOejA",
+          "short_id": "d758a643034ad90e"
+        },
+        "server_name": "www.apple.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "d72045ad-9c37-4768-89c1-88fe6ae7f9fc"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "132.243.231.4",
+      "server_port": 443,
+      "tag": "425eef8257a6ffc6",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "zWDvtTWK-cWWwHDMHMXcOpQy4k3EKp7yw-5e0wTZAUM",
+          "short_id": "5efa80b939612291"
+        },
+        "server_name": "d3-se1.cloud-cdn.xyz",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "87fd990d-ca93-440a-bbd4-e8281c4a0910"
+    },
+    {
+      "alter_id": 0,
+      "security": "auto",
+      "server": "zfd-hkv1.kunlun01dns.com",
+      "server_port": 16114,
+      "tag": "a88663e864ff3812",
+      "type": "vmess",
+      "uuid": "0802ac03-7973-39ef-a019-ba02de6c01e1"
+    },
+    {
+      "server": "172.64.154.8",
+      "server_port": 2052,
+      "tag": "d1fb47d96fda0755",
+      "transport": {
+        "headers": {
+          "Host": "8nj2r.2k8t.f88.hh.vavava.kdns.fr"
+        },
+        "path": "/",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "47fcef29-ab4e-4aa6-932b-d95a18f28a4e"
+    },
+    {
+      "password": "UX82473651",
+      "server": "musical-terrier.rooster465.autos",
+      "server_port": 443,
+      "tag": "fa356a07426a17cf",
+      "tls": {
+        "enabled": true,
+        "server_name": "musical-terrier.rooster465.autos",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "trojan"
+    },
+    {
+      "password": "UX82473651",
+      "server": "dynamic-imp.rooster465.autos",
+      "server_port": 443,
+      "tag": "6cd022c09b651f8b",
+      "tls": {
+        "enabled": true,
+        "server_name": "dynamic-imp.rooster465.autos",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "trojan"
+    },
+    {
+      "flow": "xtls-rprx-vision",
+      "server": "82.118.22.161",
+      "server_port": 443,
+      "tag": "4890baf3f801c509",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "xY1KpNxaIGmi6jfeudYQ_aaLGQqWK_uHStnwUFd2_2E",
+          "short_id": "fa3ea655619a3e78"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "safari"
+        }
+      },
+      "type": "vless",
+      "uuid": "05488656-d4bf-4634-8b2e-e4ff5a56c7e2"
+    },
+    {
+      "server": "34.87.229.148",
+      "server_port": 443,
+      "tag": "acef6cb72df9714e",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "public_key": "OgTkmAQdLjipA9oLloxbU5BAX3hPjzbvkEGHF4aZ8z4",
+          "short_id": "8a7d5e0248cdb1b1"
+        },
+        "server_name": "www.cloudflare.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "type": "vless",
+      "uuid": "4f865f35-cf47-4e7f-a7e6-8882511a1b36"
     },
     {
       "method": "chacha20-ietf-poly1305",
@@ -787,31 +1117,6 @@
       "server_port": 443,
       "tag": "64bb5e859ad5d112",
       "type": "shadowsocks"
-    },
-    {
-      "password": "humanity",
-      "server": "104.18.35.86",
-      "server_port": 443,
-      "tag": "fbb5970123800257",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "www.volumerOot.coM.",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "www.volumerOot.coM."
-        },
-        "path": "/assignment",
-        "type": "ws"
-      },
-      "type": "trojan"
     },
     {
       "password": "humanity",
@@ -962,234 +1267,6 @@
         "type": "ws"
       },
       "type": "trojan"
-    },
-    {
-      "server": "104.21.28.22",
-      "server_port": 443,
-      "tag": "127fa4a3f3d1e805",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "vFuHF4iQN9b0-pyQr62d.QFeM579eMmB5Z6NE0EjFcb.WorKers.Dev",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "vfuhf4iqn9b0-pyqr62d.qfem579emmb5z6ne0ejfcb.workers.dev"
-        },
-        "path": "/vl/JjVa6m2jVRuNUtMfj?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "03790b11-e3d9-4966-859b-4e524bb04645"
-    },
-    {
-      "server": "188.114.97.6",
-      "server_port": 443,
-      "tag": "ad88c56b372428af",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "vfuhf4iqn9b0-pyqr62d.qfem579emmb5z6ne0ejfcb.workers.dev",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "vfuhf4iqn9b0-pyqr62d.qfem579emmb5z6ne0ejfcb.workers.dev"
-        },
-        "path": "/vl/DfvlLmSkjWX3nTYInEaKodZ33E4cvX?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "03790b11-e3d9-4966-859b-4e524bb04645"
-    },
-    {
-      "server": "argo6.5671234.xyz",
-      "server_port": 443,
-      "tag": "c796e4a4b21b7e9a",
-      "tls": {
-        "enabled": true,
-        "server_name": "argo6.5671234.xyz",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "argo6.5671234.xyz"
-        },
-        "path": "/e8e2cecb6188f7fb",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "08aaab35-a42d-4755-a03e-20c18cb1b3e8"
-    },
-    {
-      "server": "multipanel-production-622b.up.railway.app",
-      "server_port": 443,
-      "tag": "845e67435b40a521",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "multipanel-production-622b.up.railway.app",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "multipanel-production-622b.up.railway.app"
-        },
-        "path": "/ws/094fef96-fae0-db37-85f8-29db7412b5f6",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "094fef96-fae0-db37-85f8-29db7412b5f6"
-    },
-    {
-      "server": "104.21.227.134",
-      "server_port": 80,
-      "tag": "2328c6f87abeb9df",
-      "transport": {
-        "headers": {
-          "Host": "elenaaaaaaaaaa.cloudns.pro"
-        },
-        "path": "/ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "0991a0c4-0ee5-4213-af89-7ad589f853f3"
-    },
-    {
-      "server": "188.114.98.112",
-      "server_port": 80,
-      "tag": "188dee9883fd9dd5",
-      "transport": {
-        "headers": {
-          "Host": "elenaaaaaaaaaa.cloudns.pro."
-        },
-        "path": "/ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY----ELiV2-RAY?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "0991a0c4-0ee5-4213-af89-7ad589f853f3"
-    },
-    {
-      "server": "65.109.208.97",
-      "server_port": 47851,
-      "tag": "4c9305ecd2faaa83",
-      "transport": {
-        "path": "/",
-        "type": "http"
-      },
-      "type": "vless",
-      "uuid": "1240607b-86ed-4ef1-9123-8061144cbdbf"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "45.131.212.231",
-      "server_port": 443,
-      "tag": "159c8d5a2cdefefb",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc"
-        },
-        "server_name": "sellflow.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "19513b1b-d29a-4f3e-ba9a-888261e4e048"
-    },
-    {
-      "server": "188.114.97.6",
-      "server_port": 443,
-      "tag": "4cb854d0253e89e5",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "2yijonkovdic86iq5ebnd1moqqf.yyuz0mhr4awg8vw-wwycuu4.workers.dev",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "2yijonkovdic86iq5ebnd1moqqf.yyuz0mhr4awg8vw-wwycuu4.workers.dev"
-        },
-        "path": "/vl/17NBgz64AfwQ4Dd6qdNR?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "26168a04-a91c-48fc-b8d0-3ba5a4e719c4"
-    },
-    {
-      "server": "188.114.97.6",
-      "server_port": 443,
-      "tag": "47d7103d9fe4c6e3",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "h3hadzojqmjxwseayj0dwe4o0.ade-1018.workers.dev",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "h3hadzojqmjxwseayj0dwe4o0.ade-1018.workers.dev"
-        },
-        "path": "/vl/ml3Epzqnzr8r2cTPtolbD5lTi1GWsZOP?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "41750e18-7143-49a3-bdac-4edcb3c8b8f3"
-    },
-    {
-      "server": "199.232.78.159",
-      "server_port": 443,
-      "tag": "f5f0327c96d60577",
-      "tls": {
-        "enabled": true,
-        "server_name": "ssl.fastly.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "pan2e.global.ssl.fastly.net"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "8453bdb7-dd58-419d-b002-9456dd2e73d7"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -1360,268 +1437,6 @@
       "uuid": "87fd990d-ca93-440a-bbd4-e8281c4a0910"
     },
     {
-      "server": "141.144.205.157",
-      "server_port": 62145,
-      "tag": "e060fa9e59bd8b75",
-      "type": "vless",
-      "uuid": "8fb65472-5957-4f64-ba2d-b5812b2f155a"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "23.106.157.238",
-      "server_port": 443,
-      "tag": "41c2560f7785614a",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "9eEEyh54RHBjnhuLXarcEZVAdChc13VDHEALTgTSkiQ",
-          "short_id": "1eef93ac10c85c0e"
-        },
-        "server_name": "www.nvidia.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "965758d5-ea3e-4209-8525-3655154b470e"
-    },
-    {
-      "server": "199.232.78.170",
-      "server_port": 443,
-      "tag": "a0dc13b138534e61",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "ssl.fastly.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "Appxdn.global.ssl.fastly.net"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "XpnTeam-67"
-    },
-    {
-      "server": "199.232.78.160",
-      "server_port": 443,
-      "tag": "aef107883c24fcbd",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "ssl.fastly.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "Appxdn.global.ssl.fastly.net"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "XpnTeam-68"
-    },
-    {
-      "server": "188.114.96.0",
-      "server_port": 80,
-      "tag": "d80b2ac36fe37f8b",
-      "transport": {
-        "headers": {
-          "Host": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev"
-        },
-        "path": "/vl/rv3owMVxwoy4xI9j?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "a0906133-bc17-49da-aa1a-d5ea99ee2e3e"
-    },
-    {
-      "server": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev",
-      "server_port": 8880,
-      "tag": "34f30745a7a35fac",
-      "transport": {
-        "headers": {
-          "Host": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev"
-        },
-        "path": "/vl/kYZTVNeflLQuHfmFJ1KE?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "a0906133-bc17-49da-aa1a-d5ea99ee2e3e"
-    },
-    {
-      "server": "www.speedtest.net",
-      "server_port": 8080,
-      "tag": "9f401da9ea438768",
-      "transport": {
-        "headers": {
-          "Host": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev"
-        },
-        "path": "/vl/FxO0xL11AsIvtewAh5dMbGWMHfKwJq?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "a0906133-bc17-49da-aa1a-d5ea99ee2e3e"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "31.77.15.221",
-      "server_port": 443,
-      "tag": "ad6cc265e5492419",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "XNDo_IssePPu4qVW3xiLE_87CEqoS6F1iLj0g3Q89G0",
-          "short_id": "da4d87fa"
-        },
-        "server_name": "drhvv.huinaduok.fans",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "a5dd2dd9-0995-449e-be67-4a409890dc42"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "t14.qifei.app",
-      "server_port": 443,
-      "tag": "072fff6789c7f302",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "0i_xAxYgSNx5NMpK2lOaWGS-CvAiD_LneYPO0MF0owo",
-          "short_id": "1a"
-        },
-        "server_name": "www.amazon.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "b98d4c6e-6770-4a31-8256-a4750cdea0e7"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "13.143.186.68",
-      "server_port": 443,
-      "tag": "8377f362f663f4cd",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "d7LhYslRcJWtBNkrKa7z6PsRctmIsqiOASnF2ZACdUk",
-          "short_id": "3e3535e340e5ea81"
-        },
-        "server_name": "api-static-upload.kaneki.cfd",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "e19b5aa3-16c9-435a-8bc9-76f2f6ddff43"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "172.104.229.189",
-      "server_port": 31146,
-      "tag": "52c9c2c0f9e89f21",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "QAoJHZT6_DZsBu-jH74uYZUTpGgxmvN2tXpRKj4CygE",
-          "short_id": "cf4e6f8338"
-        },
-        "server_name": "play-fe.googleapis.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "f0466557-2fd5-442e-94cb-12c6b764155e"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "95.85.227.241",
-      "server_port": 443,
-      "tag": "50d7b1effc0a267d",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "dlX12huNd8CRSGgKGCwi1GiCLFtmRxY9b7ywKCIyWXo",
-          "short_id": "25934afbedc65791"
-        },
-        "server_name": "proxy3d.h1guro.ovh",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "f90b7d43-69e2-4b46-a672-8029bc6796a2"
-    },
-    {
-      "server": "tutaim.azad0namah.ir",
-      "server_port": 8080,
-      "tag": "249100b998772ed8",
-      "type": "vless",
-      "uuid": "fdc1206a-9d2e-42b7-b615-9ccea8cf70ee"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "185.236.8.32",
-      "server_port": 443,
-      "tag": "7dcb59201ab79afe",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "jbiddtGRgeBvlkjbuA3aU-WPjKgEX87tOVh1mFfvOUI",
-          "short_id": "16e0f049"
-        },
-        "server_name": "nl32.mech-pro.online",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "ff35ca20-2304-4b3a-80e5-2c82953cf2ce"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "134.195.198.214",
-      "server_port": 22324,
-      "tag": "ea3ee97bb69eb9ea",
-      "type": "vmess",
-      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
-    },
-    {
       "alter_id": 0,
       "security": "auto",
       "server": "185.177.229.129",
@@ -1662,155 +1477,6 @@
       "uuid": "d342d11e-d224-4463-b982-532309285094"
     },
     {
-      "server": "69.63.221.116",
-      "server_port": 25517,
-      "tag": "997696764dd2ff1f",
-      "tls": {
-        "enabled": true,
-        "server_name": "wzs.echo.net.eu.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "wzs.echo.net.eu.org"
-        },
-        "path": "/video/HxNMGkZdGw0PRk1GVw8YF14OXkwNVVtIRg1HBRETS1lYDldeEEFRGxhbVloPHhpEVl9AFwxSGQ9bSQ==fp=chrome",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "d18c6897-2849-456a-8c46-d7ecece47c20"
-    },
-    {
-      "password": "humanity",
-      "server": "188.42.145.180",
-      "server_port": 443,
-      "tag": "e8ff71c3d8964008",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "www.volumeroot.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "www.volumeroot.com"
-        },
-        "path": "/assignment",
-        "type": "ws"
-      },
-      "type": "trojan"
-    },
-    {
-      "server": "tg.juntham.cn",
-      "server_port": 443,
-      "tag": "c1483218c224381d",
-      "tls": {
-        "enabled": true,
-        "server_name": "tg.juntham.cn",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "tg.juntham.cn"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "da8aa4cc-4f76-4248-a289-41f25713b6e2"
-    },
-    {
-      "server": "vl.cocopon.top",
-      "server_port": 443,
-      "tag": "c9290aaeec5806ce",
-      "tls": {
-        "enabled": true,
-        "server_name": "vl.cocopon.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "vl.cocopon.top"
-        },
-        "path": "/?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "44f06ad1-982c-4e03-849f-899c1c8dc14f"
-    },
-    {
-      "server": "172.67.79.160",
-      "server_port": 2087,
-      "tag": "3a7dea83b0c43005",
-      "tls": {
-        "enabled": true,
-        "server_name": "cvhpyn.pages.dev",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "cvhpyn.pages.dev"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "a4a951b9-901d-4db8-8a7d-6df82c4b5c23"
-    },
-    {
-      "server": "cf.130519.xyz",
-      "server_port": 443,
-      "tag": "d88cc35af49ddd94",
-      "tls": {
-        "enabled": true,
-        "server_name": "819.18827466.bot.cd",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "819.18827466.bot.cd"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "cd7c5c42-7677-4002-8ad3-4433b166a5d1"
-    },
-    {
-      "server": "172.67.207.26",
-      "server_port": 8880,
-      "tag": "b317d41fb5a2822a",
-      "transport": {
-        "headers": {
-          "Host": "twilight-poetry-2bfe.218-699.workers.dev"
-        },
-        "path": "/pyip=ProxyIP.JP.CMLiussss.net",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "26beb784-a664-4c3e-becf-0f0c12568b62"
-    },
-    {
       "server": "www.zsu.gov.ua",
       "server_port": 8880,
       "tag": "fb8068863d97df0b",
@@ -1825,118 +1491,6 @@
       "uuid": "667a035b-6656-4a4f-a74c-8cd6a679f8d4"
     },
     {
-      "server": "104.26.2.223",
-      "server_port": 8080,
-      "tag": "12ad38945ffbe032",
-      "transport": {
-        "headers": {
-          "Host": "pe2ev-frosty-poetry-3d08.s67y4jl8.workers.dev"
-        },
-        "path": "/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "9cc42ee7-1f5f-46f5-a8b0-2da76b6b6641"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "185.53.209.67",
-      "server_port": 443,
-      "tag": "667e5fbb1771a847",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "9GEc6lOjnGQyyE1951OZSBMWt4uCXsOjKyj9fysxHH0",
-          "short_id": "e0ccc8c2f487d913"
-        },
-        "server_name": "us-2.srv.dvzh.net",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "4e3ba5d7-377c-4199-8c18-00e36ff036ff"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "2.26.20.71",
-      "server_port": 8343,
-      "tag": "fe01f428e0c55085",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "0D3EUXrbjgFDSKAKFh8MdI_u20RKlpTmsRTfFgUwOj4",
-          "short_id": "a4f8c92d"
-        },
-        "server_name": "main-api-02-c1.kaneki.cfd",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "e19b5aa3-16c9-435a-8bc9-76f2f6ddff43"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "185.166.154.111",
-      "server_port": 443,
-      "tag": "4865f1c0ce395472",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "bQZcMViJWXus9rMSTOa-ZAaUJC0mIlPx7XmzrLp8GQU",
-          "short_id": "94f32cfc"
-        },
-        "server_name": "cdn.bulkavpn.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "91d734be-a3d0-4d50-83ab-74cf7b6966fa"
-    },
-    {
-      "server": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev",
-      "server_port": 2082,
-      "tag": "87e93c4e92d60f3c",
-      "transport": {
-        "headers": {
-          "Host": "prop0yauife5z9t5sa5681bq1.rjsc50uq2-b6gdjw21gm-c154p.workers.dev"
-        },
-        "path": "/vl/mMOph4J7djwoO1sXZlWdqL?ed=2560",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "a0906133-bc17-49da-aa1a-d5ea99ee2e3e"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "2.27.207.30",
-      "server_port": 443,
-      "tag": "bcc1c500a4257c28",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "nG28Y1q-Ul2oBH-FegAkzGtvY6IRCIwras1k8CLwdGo",
-          "short_id": "da4d87fa"
-        },
-        "server_name": "jdbdb.huinaduok.fans",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "random"
-        }
-      },
-      "type": "vless",
-      "uuid": "a5dd2dd9-0995-449e-be67-4a409890dc42"
-    },
-    {
       "server": "platform108.golnamakcert.top",
       "server_port": 80,
       "tag": "cb9129530dd48007",
@@ -1949,51 +1503,6 @@
       },
       "type": "vless",
       "uuid": "e13cf851-b4fd-413b-8d49-146e6eb8e5d4"
-    },
-    {
-      "method": "aes-256-cfb",
-      "password": "N7j3pdTYkKmsy8CR",
-      "server": "217.30.10.44",
-      "server_port": 9095,
-      "tag": "0df561dda738da40",
-      "type": "shadowsocks"
-    },
-    {
-      "method": "aes-256-cfb",
-      "password": "UTJA57ypk2XKQpnm",
-      "server": "185.135.86.175",
-      "server_port": 9033,
-      "tag": "dffd5ce4e87c452c",
-      "type": "shadowsocks"
-    },
-    {
-      "method": "aes-256-cfb",
-      "password": "amazonskr05",
-      "server": "35.180.48.226",
-      "server_port": 443,
-      "tag": "83b98d61728bdd9b",
-      "type": "shadowsocks"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "185.236.22.34",
-      "server_port": 443,
-      "tag": "b49706b459b8f6a2",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "oKG1EhkfIvBM6xLEk7ck51ZbjvUKDR22RNjTJR_7sTU",
-          "short_id": "46da9a2868751b85"
-        },
-        "server_name": "amber.gaznw.my",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "safari"
-        }
-      },
-      "type": "vless",
-      "uuid": "d6bd3ec0-84f5-4df3-bd5a-ef69469ce642"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -2015,26 +1524,6 @@
       },
       "type": "vless",
       "uuid": "48ff2b70-e180-582f-8866-d9a2edeed5f5"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "45.86.159.61",
-      "server_port": 8443,
-      "tag": "820a0dabdc0e3eb4",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "22mH2kO_6Q43slZjf-njD9TMv9xeYMA1P28PzEtqOWo"
-        },
-        "server_name": "api.furyno.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "safari"
-        }
-      },
-      "type": "vless",
-      "uuid": "63e9c63d-fd57-4b72-84a0-29ea421a0555"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -2079,27 +1568,6 @@
       "uuid": "55ccbeb5-0bf4-4e4d-afcb-23c038e73e00"
     },
     {
-      "flow": "xtls-rprx-vision",
-      "server": "83.168.107.220",
-      "server_port": 443,
-      "tag": "55aa79aac60bb183",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "s0lbZ5BO3ctZjE8DzsXkNL0NvLl6FgLG6532NQzXigo",
-          "short_id": "c56d4f1c"
-        },
-        "server_name": "google.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "b1813cbd-831f-4cb3-baf8-5bc0cc8298bc"
-    },
-    {
       "server": "208.69.78.217",
       "server_port": 2053,
       "tag": "d5cd2e8210ac59d9",
@@ -2139,42 +1607,6 @@
       },
       "type": "vless",
       "uuid": "ce18d0eb-5c71-41f9-96e5-1632e22456e4"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "144.31.235.214",
-      "server_port": 443,
-      "tag": "7c82c0b777b925d7",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "V2JprbR_aJkS7uX6anyU3nrswGxdvDQT2HpY4WnzuC8",
-          "short_id": "5629431325884ff0"
-        },
-        "server_name": "swed4.o4ka-internet.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "8f6e49e6-7f03-4f10-9da9-1716158d80ed"
-    },
-    {
-      "password": "UX82473651",
-      "server": "3.120.109.26",
-      "server_port": 443,
-      "tag": "44ad9eb1f24f8544",
-      "tls": {
-        "enabled": true,
-        "server_name": "actual-squid.rooster465.autos",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "trojan"
     },
     {
       "password": "UX82473651",
@@ -2313,21 +1745,6 @@
     },
     {
       "password": "UX82473651",
-      "server": "obliging-louse.rooster465.autos",
-      "server_port": 443,
-      "tag": "d0f86ae557c6ba43",
-      "tls": {
-        "enabled": true,
-        "server_name": "obliging-louse.rooster465.autos",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "trojan"
-    },
-    {
-      "password": "UX82473651",
       "server": "loved-shark.rooster465.autos",
       "server_port": 443,
       "tag": "34e50317ec2d0797",
@@ -2394,111 +1811,6 @@
       "type": "trojan"
     },
     {
-      "server": "speedtest.org",
-      "server_port": 443,
-      "tag": "c4caaf7b1aeb9879",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "server4.birchvalleyway.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "server4.birchvalleyway.top"
-        },
-        "path": "/rally",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "f8175a3d-ad69-44c8-a2aa-87d4d06994eb"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "57.129.132.223",
-      "server_port": 80,
-      "tag": "ca3b808c73267c9c",
-      "transport": {
-        "headers": {
-          "Host": "google.com"
-        },
-        "path": "/vmess/",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "a25cbf11-2908-4a1b-a3a8-9a571777dca3"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "169.40.42.89",
-      "server_port": 443,
-      "tag": "0d1f95855519e26d",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "e2RLf57Li_-MDZGE9ss1BWPgP54mqRb5PfXhW2jcVVg",
-          "short_id": "c39cc7310a"
-        },
-        "server_name": "yahoo.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "d65cc14c-f53f-4fe2-b262-97856601319c"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "93.89.220.37",
-      "server_port": 443,
-      "tag": "4a1442b927e1010a",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "lwKaUQ81wJUJRsqAPsfTPj5V_f9N50UYEwzRI_nuq2g",
-          "short_id": "e88cb983f3c97528"
-        },
-        "server_name": "ibm.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "185e2bb3-2934-48d0-bbd5-dd20d16e83ee"
-    },
-    {
-      "server": "ee10.zazazuza.ru",
-      "server_port": 8443,
-      "tag": "78a512e4c9310f7d",
-      "tls": {
-        "enabled": true,
-        "server_name": "fdghyt.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "fdghyt.com"
-        },
-        "path": "/vpn-wss/fluxor/59011/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "6c713691-3ca2-4446-ad25-113d1bed6b03"
-    },
-    {
       "password": "UX82473651",
       "server": "winning-marten.rooster465.autos",
       "server_port": 443,
@@ -2514,22 +1826,6 @@
       "type": "trojan"
     },
     {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "57.129.132.223",
-      "server_port": 80,
-      "tag": "67089ef9cc387c4c",
-      "transport": {
-        "headers": {
-          "Host": "google.com"
-        },
-        "path": "/vmess/",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "a25cbf11-2908-4a1b-a3a8-9a571777dca3"
-    },
-    {
       "password": "UX82473651",
       "server": "organic-caribou.rooster465.autos",
       "server_port": 443,
@@ -2543,93 +1839,6 @@
         }
       },
       "type": "trojan"
-    },
-    {
-      "server": "77.72.85.246",
-      "server_port": 8443,
-      "tag": "12a4d4f8858e0795",
-      "tls": {
-        "enabled": true,
-        "server_name": "fdghyt.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "fdghyt.com"
-        },
-        "path": "/vpn-wss/fluxor/59011/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "6c713691-3ca2-4446-ad25-113d1bed6b03"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "147.182.144.185",
-      "server_port": 8039,
-      "tag": "45e9be5031c5b4df",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "ZrdPHtBvi7yMRj17SohKaGQEXuDptmCJWCi8gk5HlD8",
-          "short_id": "35938c4e546cd459"
-        },
-        "server_name": "www.tno.nl",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "3f2eaa98-5e92-20d8-c006-899e69c948a4"
-    },
-    {
-      "server": "higv-production.up.railway.app",
-      "server_port": 443,
-      "tag": "3398ab7746181e27",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "higv-production.up.railway.app",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "higv-production.up.railway.app"
-        },
-        "path": "/ws/2b98faff-5a9f-4c84-9f89-8eb0328a698e",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "2b98faff-5a9f-4c84-9f89-8eb0328a698e"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "chubby0.failspace.top",
-      "server_port": 443,
-      "tag": "9ddfdccfd13706b0",
-      "tls": {
-        "alpn": [
-          "h2"
-        ],
-        "enabled": true,
-        "server_name": "chubby0.failspace.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "cd3bb7d9-7df3-4644-ac05-c260990ac277"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -2724,41 +1933,6 @@
     },
     {
       "flow": "xtls-rprx-vision",
-      "server": "47.253.226.114",
-      "server_port": 443,
-      "tag": "4dbedbdd064cf196",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "Svl81isn16RPAFnjtmYw7A6TPnsEPLHuYYaJht65Rzc"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "055a1ce8-2a16-4a0d-a2c2-22826c9b2413"
-    },
-    {
-      "password": "UX82473651",
-      "server": "obliging-louse.rooster465.autos",
-      "server_port": 443,
-      "tag": "97683ab62ccd56dc",
-      "tls": {
-        "enabled": true,
-        "server_name": "obliging-louse.rooster465.autos",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "trojan"
-    },
-    {
-      "flow": "xtls-rprx-vision",
       "server": "132.243.231.4",
       "server_port": 443,
       "tag": "2db94aa31923637c",
@@ -2777,79 +1951,6 @@
       },
       "type": "vless",
       "uuid": "87fd990d-ca93-440a-bbd4-e8281c4a0910"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "144.31.235.214",
-      "server_port": 443,
-      "tag": "2725512687ff68d5",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "V2JprbR_aJkS7uX6anyU3nrswGxdvDQT2HpY4WnzuC8",
-          "short_id": "5629431325884ff0"
-        },
-        "server_name": "swed4.o4ka-internet.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "8f6e49e6-7f03-4f10-9da9-1716158d80ed"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "nilka-new-2.failspace.top",
-      "server_port": 443,
-      "tag": "71375d47b4ea78b1",
-      "tls": {
-        "alpn": [
-          "h2"
-        ],
-        "enabled": true,
-        "server_name": "nilka-new-2.failspace.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "cd3bb7d9-7df3-4644-ac05-c260990ac277"
-    },
-    {
-      "server": "57.129.132.223",
-      "server_port": 80,
-      "tag": "8db8ef1b1c15167e",
-      "transport": {
-        "headers": {
-          "Host": "google.com"
-        },
-        "path": "/vless/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "9e20b04d-5a81-4e16-b421-01e502f0aac6"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "at-nick.failspace.top",
-      "server_port": 443,
-      "tag": "2d7c6a5da7ee50d9",
-      "tls": {
-        "alpn": [
-          "h2"
-        ],
-        "enabled": true,
-        "server_name": "at-nick.failspace.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "cd3bb7d9-7df3-4644-ac05-c260990ac277"
     },
     {
       "password": "UX82473651",
@@ -2886,28 +1987,6 @@
       },
       "type": "vless",
       "uuid": "2eceaf2b-a775-5a9c-9990-dad2b3660fb6"
-    },
-    {
-      "server": "89.125.96.90",
-      "server_port": 2053,
-      "tag": "11ebc854be5e1641",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "wss.zazazuza.ru",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "path": "/vpn-wss/fluxor/59011/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "6c713691-3ca2-0008-ad25-113d1bed6b03"
     },
     {
       "server": "208.69.78.217",
@@ -3200,25 +2279,6 @@
     },
     {
       "flow": "xtls-rprx-vision",
-      "server": "chubby0.failspace.top",
-      "server_port": 443,
-      "tag": "7757f7b67f5b9953",
-      "tls": {
-        "alpn": [
-          "h2"
-        ],
-        "enabled": true,
-        "server_name": "chubby0.failspace.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "cd3bb7d9-7df3-4644-ac05-c260990ac277"
-    },
-    {
-      "flow": "xtls-rprx-vision",
       "server": "201.51.21.201",
       "server_port": 443,
       "tag": "9ea76674079c71cf",
@@ -3236,27 +2296,6 @@
       },
       "type": "vless",
       "uuid": "ac0c2945-b758-11f1-8181-54db13ea7d40"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "109.104.106.15",
-      "server_port": 443,
-      "tag": "2c79ce3505a94de0",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "a_v5l6R-rpVGlENLeONW4sz-GdRwIoDqISOWXGov8nw",
-          "short_id": "87709fed663228e5"
-        },
-        "server_name": "d3-ro.cloud-cdn.xyz",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "87fd990d-ca93-440a-bbd4-e8281c4a0910"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -3278,26 +2317,6 @@
       },
       "type": "vless",
       "uuid": "87fd990d-ca93-440a-bbd4-e8281c4a0910"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "45.131.212.231",
-      "server_port": 443,
-      "tag": "88614ddc07a86b68",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc"
-        },
-        "server_name": "sellflow.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "19513b1b-d29a-4f3e-ba9a-888261e4e048"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -3341,27 +2360,6 @@
       "uuid": "94def50e-5f3c-4e4c-9719-3325f42d2131"
     },
     {
-      "flow": "xtls-rprx-vision",
-      "server": "185.166.154.111",
-      "server_port": 443,
-      "tag": "146073b8c4dcc9a4",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "bQZcMViJWXus9rMSTOa-ZAaUJC0mIlPx7XmzrLp8GQU",
-          "short_id": "94f32cfc"
-        },
-        "server_name": "cdn.bulkavpn.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "91d734be-a3d0-4d50-83ab-74cf7b6966fa"
-    },
-    {
       "password": "UX82473651",
       "server": "promoted-rattler.rooster465.autos",
       "server_port": 443,
@@ -3375,26 +2373,6 @@
         }
       },
       "type": "trojan"
-    },
-    {
-      "server": "143.246.41.23",
-      "server_port": 25895,
-      "tag": "851df08aa5b53a3b",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "jOVKSP-bS9OkILJ8Epz8hadh6qhavCrOiJYeF0NCn0k",
-          "short_id": "a73f0410d728c823"
-        },
-        "server_name": "www.samsung.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "f90b7d43-69e2-4b46-a672-8029bc6796a2"
     },
     {
       "password": "UX82473651",
@@ -3475,47 +2453,6 @@
         }
       },
       "type": "trojan"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "tyo-a-02.auuas.com",
-      "server_port": 1891,
-      "tag": "0f10bedaeac7539f",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "O7lEfntqflgUugTLJmJNv8qw9Qe0tagUlyDwS3yY4Uo",
-          "short_id": "8378f267"
-        },
-        "server_name": "www.npmjs.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "81c4547b-e5d8-4af8-baf0-91c5c0c05a9b"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "47.253.226.114",
-      "server_port": 443,
-      "tag": "81a4aceebb1704fb",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "Svl81isn16RPAFnjtmYw7A6TPnsEPLHuYYaJht65Rzc"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "055a1ce8-2a16-4a0d-a2c2-22826c9b2413"
     },
     {
       "server": "172.64.158.146",
@@ -3674,14 +2611,6 @@
       "type": "trojan"
     },
     {
-      "method": "chacha20-ietf-poly1305",
-      "password": "ng0XTChgbJJ3Sv2d",
-      "server": "20.238.125.195",
-      "server_port": 443,
-      "tag": "577609f2d60a0e1d",
-      "type": "shadowsocks"
-    },
-    {
       "password": "mitivpn",
       "server": "167.82.76.27",
       "server_port": 443,
@@ -3743,14 +2672,6 @@
       "uuid": "8df2e661-6f46-471b-9133-7fc13a0daa35"
     },
     {
-      "method": "chacha20-ietf-poly1305",
-      "password": "jUg9wluj5iOiY9sI",
-      "server": "20.238.125.195",
-      "server_port": 443,
-      "tag": "d63ba1d16586c223",
-      "type": "shadowsocks"
-    },
-    {
       "flow": "xtls-rprx-vision",
       "server": "87.58.201.67",
       "server_port": 443,
@@ -3798,29 +2719,6 @@
     },
     {
       "flow": "xtls-rprx-vision",
-      "server": "47.253.226.114",
-      "server_port": 443,
-      "tag": "97b0ddfe2f69a3ca",
-      "tls": {
-        "alpn": [
-          "networld_vpn-channel@.networld_vpn-channel@.networld_vpn-channel@.networld_vpn-channel@.networld_vpn-channel@.networld_vpn-channel@.networld_vpn-"
-        ],
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "Svl81isn16RPAFnjtmYw7A6TPnsEPLHuYYaJht65Rzc"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "055a1ce8-2a16-4a0d-a2c2-22826c9b2413"
-    },
-    {
-      "flow": "xtls-rprx-vision",
       "server": "169.40.42.104",
       "server_port": 443,
       "tag": "8701fdc9044977a4",
@@ -3839,31 +2737,6 @@
       },
       "type": "vless",
       "uuid": "d65cc14c-f53f-4fe2-b262-97856601319c"
-    },
-    {
-      "server": "77.72.85.246",
-      "server_port": 8443,
-      "tag": "acbcf5dc76a0bdf5",
-      "tls": {
-        "alpn": [
-          "http/1.1"
-        ],
-        "enabled": true,
-        "server_name": "fdghyt.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "fdghyt.com"
-        },
-        "path": "/vpn-wss/fluxor/59011/",
-        "type": "ws"
-      },
-      "type": "vless",
-      "uuid": "6c713691-3ca2-4446-ad25-113d1bed6b03"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -3899,87 +2772,6 @@
       },
       "type": "vless",
       "uuid": "e13cf851-b4fd-413b-8d49-146e6eb8e5d4"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "2.26.80.235",
-      "server_port": 443,
-      "tag": "7044f1613e221e09",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "_gjcl5q-hkJIFmKYSY9DbBcSiBHK3YUAKOfZzZqnkT8",
-          "short_id": "c17f1d8951b3bf90"
-        },
-        "server_name": "dl.google.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "safari"
-        }
-      },
-      "type": "vless",
-      "uuid": "cb0ccf90-0e8f-4621-b042-4e35c797de2b"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "95.179.208.12",
-      "server_port": 443,
-      "tag": "dfb92514d05b0237",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "hTweFDvbSucrGERtiiwDfoqD3vo_Z9cuaqboff3FTXQ"
-        },
-        "server_name": "googleapis.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "d90087c3-54f5-4283-a13f-615260c8b0c7"
-    },
-    {
-      "server": "78.111.89.171",
-      "server_port": 443,
-      "tag": "20a09e27538083ec",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "lYcMPEgf6ePmF_d8RXR5fsVorycW37v_ECl-fz_H6w4",
-          "short_id": "cfe08c23a85f24"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "0370b162-baff-4757-86cc-cce4bf07f6f1"
-    },
-    {
-      "server": "78.111.89.171",
-      "server_port": 443,
-      "tag": "d67e72fc59a2d553",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "lYcMPEgf6ePmF_d8RXR5fsVorycW37v_ECl-fz_H6w4",
-          "short_id": "cfe08c23a85f24"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "0370b162-baff-4757-86cc-cce4bf07f6f1"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -4120,27 +2912,6 @@
       "uuid": "1572b9c5-d741-46eb-b4a2-a5d23958dfbe"
     },
     {
-      "flow": "xtls-rprx-vision",
-      "server": "83.147.18.75",
-      "server_port": 443,
-      "tag": "dd884c424b1bf07e",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "tfFzmbVByvoZxxIEUiHMv22_k0-nQz00L0XjU0bd_Fc",
-          "short_id": "7f1e29593aa94ad1"
-        },
-        "server_name": "www.bing.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "qq"
-        }
-      },
-      "type": "vless",
-      "uuid": "5de0c218-0138-45d8-94d2-c2c3f37a1a6d"
-    },
-    {
       "alter_id": 0,
       "security": "auto",
       "server": "31.76.11.83",
@@ -4148,25 +2919,6 @@
       "tag": "b1dfae70a1945d78",
       "type": "vmess",
       "uuid": "3dff544a-379e-41f9-95d9-4b95a8e4026e"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "chubby0.failspace.top",
-      "server_port": 443,
-      "tag": "1895bfea771f2fec",
-      "tls": {
-        "alpn": [
-          "h2"
-        ],
-        "enabled": true,
-        "server_name": "chubby0.failspace.top",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "cd3bb7d9-7df3-4644-ac05-c260990ac277"
     },
     {
       "alter_id": 0,
@@ -4274,27 +3026,6 @@
     },
     {
       "flow": "xtls-rprx-vision",
-      "server": "78.135.73.47",
-      "server_port": 443,
-      "tag": "7720e18208b5390e",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "sZAJkAu23wp1WKY-qeaeiwR38izP5OyfhumoE9xhbB8",
-          "short_id": "f46cd3ea3d1eb72d"
-        },
-        "server_name": "www.datadoghq.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "25e16692-d097-4e69-9e2d-8415609c1968"
-    },
-    {
-      "flow": "xtls-rprx-vision",
       "server": "51.158.206.8",
       "server_port": 23576,
       "tag": "09973bab804a9be1",
@@ -4336,26 +3067,6 @@
       "uuid": "8df2e661-6f46-471b-9133-7fc13a0daa35"
     },
     {
-      "server": "51.89.194.151",
-      "server_port": 2053,
-      "tag": "b18d249e407c2bb3",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "xPEBx4wUmwAAv4ikUALNBf5wH6TRhyeQ0Q2pcNELsV0",
-          "short_id": "d051f678212f9d54"
-        },
-        "server_name": "www.apple.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "8e790f25-1d71-4601-9fb0-d503931dcfca"
-    },
-    {
       "flow": "xtls-rprx-vision",
       "server": "85.90.197.220",
       "server_port": 443,
@@ -4375,26 +3086,6 @@
       },
       "type": "vless",
       "uuid": "8f704ed6-9a1a-4d04-94dd-1bff501716de"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "143.246.196.207",
-      "server_port": 443,
-      "tag": "d583fea21ded287f",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "wSjV1yR_rhDUdoNbM9zIXNGLASLp9RorComnyoayo2c"
-        },
-        "server_name": "www.blocket.se",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "ac0c2945-b758-11f1-8181-54db13ea7d40"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -4492,14 +3183,6 @@
       "uuid": "d65cc14c-f53f-4fe2-b262-97856601319c"
     },
     {
-      "method": "aes-256-gcm",
-      "password": "BWyPPTusFKhGgzKh",
-      "server": "64.177.90.30",
-      "server_port": 8388,
-      "tag": "26dc1592d8b2d72f",
-      "type": "shadowsocks"
-    },
-    {
       "flow": "xtls-rprx-vision",
       "server": "87.192.47.10",
       "server_port": 52006,
@@ -4560,14 +3243,6 @@
       "uuid": "bc659d88-a1e0-4c65-a49a-7b51b26a7a7f"
     },
     {
-      "method": "chacha20-ietf-poly1305",
-      "password": "Qr3RLHJLngbplPWd",
-      "server": "20.238.125.195",
-      "server_port": 443,
-      "tag": "2e1e908d00a1b4e2",
-      "type": "shadowsocks"
-    },
-    {
       "alter_id": 0,
       "security": "auto",
       "server": "167.88.62.124",
@@ -4575,27 +3250,6 @@
       "tag": "ccfffe40d5c6d72f",
       "type": "vmess",
       "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "82.39.171.142",
-      "server_port": 443,
-      "tag": "8bea3b6d31e4388f",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "e2RLf57Li_-MDZGE9ss1BWPgP54mqRb5PfXhW2jcVVg",
-          "short_id": "c39cc7310a"
-        },
-        "server_name": "yahoo.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "d65cc14c-f53f-4fe2-b262-97856601319c"
     },
     {
       "method": "2022-blake3-aes-256-gcm",
@@ -4733,14 +3387,6 @@
       "uuid": "94def50e-5f3c-4e4c-9719-3325f42d2131"
     },
     {
-      "method": "aes-128-gcm",
-      "password": "1377d5cfafc9279a904deb3bfa4f3de2",
-      "server": "74.201.177.54",
-      "server_port": 14680,
-      "tag": "8e8ab69ae741d4ca",
-      "type": "shadowsocks"
-    },
-    {
       "server": "189.24.82.195",
       "server_port": 443,
       "tag": "274f3e80fc5ad996",
@@ -4763,26 +3409,6 @@
       },
       "type": "vless",
       "uuid": "bf7ca7a3-a028-488e-b9f1-34e467d6d897"
-    },
-    {
-      "server": "38.246.229.58",
-      "server_port": 47642,
-      "tag": "39e14840d7439ca0",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "9mg1QdPctekP9woKygHzBCxb8Hw2QTICXROQiiJB6Ag",
-          "short_id": "76ed3287"
-        },
-        "server_name": "sega.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "c538c9dd-2e3f-488f-a8ca-ac5b7c0773f3"
     },
     {
       "flow": "xtls-rprx-vision",
@@ -5102,30 +3728,6 @@
     {
       "alter_id": 0,
       "security": "auto",
-      "server": "158.51.121.123",
-      "server_port": 443,
-      "tag": "701022ebc77e5264",
-      "tls": {
-        "enabled": true,
-        "server_name": "mygptagent.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "mygptagent.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
       "server": "193.108.117.54",
       "server_port": 443,
       "tag": "45f251204c5be781",
@@ -5140,30 +3742,6 @@
       "transport": {
         "headers": {
           "Host": "aidrivercat.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "216.106.183.35",
-      "server_port": 443,
-      "tag": "104381239dbd832c",
-      "tls": {
-        "enabled": true,
-        "server_name": "aksai.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "aksai.org"
         },
         "path": "/linkvws",
         "type": "ws"
@@ -5469,123 +4047,6 @@
       "uuid": "47f79fc1-0646-40e8-8a58-73e85d183d5a"
     },
     {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "216.106.183.35",
-      "server_port": 443,
-      "tag": "62b874c66a4e8327",
-      "tls": {
-        "enabled": true,
-        "server_name": "aksai.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "aksai.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "158.51.121.123",
-      "server_port": 443,
-      "tag": "dc75205b3be29e4f",
-      "tls": {
-        "enabled": true,
-        "server_name": "mygptagent.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "mygptagent.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "82.118.16.187",
-      "server_port": 443,
-      "tag": "80241bf74006d451",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "R5ycsjJ-v024902dMSqTsSdqxUwCFEXMebdBEWFt9VU",
-          "short_id": "cd6065902eea7a02"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "dc2259c4-388e-4285-ba18-df619b6672b6"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "158.51.121.123",
-      "server_port": 443,
-      "tag": "d1baf12c75004101",
-      "tls": {
-        "enabled": true,
-        "server_name": "mygptagent.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "mygptagent.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "216.106.183.35",
-      "server_port": 443,
-      "tag": "5cc54048940be5ec",
-      "tls": {
-        "enabled": true,
-        "server_name": "aksai.org",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "aksai.org"
-        },
-        "path": "/linkvws",
-        "type": "ws"
-      },
-      "type": "vmess",
-      "uuid": "03fcc618-b93d-6796-6aed-8a38c975d581"
-    },
-    {
       "flow": "xtls-rprx-vision",
       "server": "23.95.222.127",
       "server_port": 8443,
@@ -5828,15 +4289,6 @@
       },
       "type": "vless",
       "uuid": "47fcef29-ab4e-4aa6-932b-d95a18f28a4e"
-    },
-    {
-      "alter_id": 0,
-      "security": "auto",
-      "server": "134.195.198.214",
-      "server_port": 22324,
-      "tag": "ae042ef960632824",
-      "type": "vmess",
-      "uuid": "04621bae-ab36-11ec-b909-0242ac120002"
     },
     {
       "server": "104.18.34.14",
@@ -6537,26 +4989,6 @@
       },
       "type": "vless",
       "uuid": "391a01e9-b664-407b-9158-610fab3f5920"
-    },
-    {
-      "server": "198.251.78.29",
-      "server_port": 2053,
-      "tag": "5bd92c8aaefc00da",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "Uk5b-Wh_uxeCc7R8NS9iWE40xc0h9wWC04rSB9yhgAw",
-          "short_id": "b5d625695ec82c7e"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "firefox"
-        }
-      },
-      "type": "vless",
-      "uuid": "c423cc1b-f88e-421c-9a16-c480d84da20f"
     },
     {
       "server": "212.227.235.66",
