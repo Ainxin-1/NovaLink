@@ -15,6 +15,8 @@
       "default": "auto",
       "outbounds": [
         "auto",
+        "3d87fde40faa4b9c",
+        "bc17d668f7a5e8a0",
         "4ce93231c027963f",
         "794c0cf29ca0d681",
         "5fa54eee5a34cc74",
@@ -617,7 +619,6 @@
         "f3d994211f957112",
         "bf1aefb7fc80ffd9",
         "16177f4b35086cb4",
-        "8c4769ee13543a9f",
         "d7d70bc83140e6d8",
         "fce896b18e031923",
         "fad124f65ba6a72c",
@@ -675,7 +676,6 @@
         "0b4a48562a1e0c07",
         "0d91036ac7f559ba",
         "dfafa87d6131e21c",
-        "846bafac57468955",
         "80e10640d32414b2",
         "774beba7fb741d31",
         "c26e9d00eadba4d5",
@@ -702,7 +702,6 @@
         "157bd18fb2d2b8f0",
         "ebee4e680734c957",
         "b9f0e6823eb01957",
-        "a756dc13f18109d6",
         "f7b5cedad64a1caa",
         "75ca4e1228ab7919",
         "3a03aaa580b744a8",
@@ -767,6 +766,8 @@
     {
       "interval": "10m",
       "outbounds": [
+        "3d87fde40faa4b9c",
+        "bc17d668f7a5e8a0",
         "4ce93231c027963f",
         "794c0cf29ca0d681",
         "5fa54eee5a34cc74",
@@ -1369,7 +1370,6 @@
         "f3d994211f957112",
         "bf1aefb7fc80ffd9",
         "16177f4b35086cb4",
-        "8c4769ee13543a9f",
         "d7d70bc83140e6d8",
         "fce896b18e031923",
         "fad124f65ba6a72c",
@@ -1427,7 +1427,6 @@
         "0b4a48562a1e0c07",
         "0d91036ac7f559ba",
         "dfafa87d6131e21c",
-        "846bafac57468955",
         "80e10640d32414b2",
         "774beba7fb741d31",
         "c26e9d00eadba4d5",
@@ -1454,7 +1453,6 @@
         "157bd18fb2d2b8f0",
         "ebee4e680734c957",
         "b9f0e6823eb01957",
-        "a756dc13f18109d6",
         "f7b5cedad64a1caa",
         "75ca4e1228ab7919",
         "3a03aaa580b744a8",
@@ -1516,6 +1514,35 @@
       "tag": "auto",
       "type": "urltest",
       "url": "https://www.gstatic.com/generate_204"
+    },
+    {
+      "server": "hw6.divarkhaghazi.com",
+      "server_port": 465,
+      "tag": "3d87fde40faa4b9c",
+      "tls": {
+        "enabled": true,
+        "server_name": "hw6.divarkhaghazi.com.",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "headers": {
+          "Host": "hw6.divarkhaghazi.com."
+        },
+        "path": "/",
+        "type": "ws"
+      },
+      "type": "vless",
+      "uuid": "09f30c46-3964-41ce-882a-72aee83ddd42"
+    },
+    {
+      "server": "168.222.43.53",
+      "server_port": 10000,
+      "tag": "bc17d668f7a5e8a0",
+      "type": "vless",
+      "uuid": "a05ecf37-c661-4247-ab09-4432cf0f3cc1"
     },
     {
       "password": "humanity",
@@ -12849,27 +12876,6 @@
       "type": "trojan"
     },
     {
-      "flow": "xtls-rprx-vision",
-      "server": "154.40.55.185",
-      "server_port": 443,
-      "tag": "8c4769ee13543a9f",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "XY0OTrgnRWxHbqBC8u4qFWvZakjNZY83AAnL_lwHu1M",
-          "short_id": "7f"
-        },
-        "server_name": "www.oracle.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "52919204-4ed9-42c8-97a0-0f01d007f898"
-    },
-    {
       "server": "203.137.165.164",
       "server_port": 57554,
       "tag": "d7d70bc83140e6d8",
@@ -14075,28 +14081,6 @@
       "uuid": "4e4f1f70-5e56-4a76-bb9d-db087f4690c4"
     },
     {
-      "password": "e309e031-991e-4656-9934-44d10deb8fd8",
-      "server": "nimm.mpd.cc.cd",
-      "server_port": 2053,
-      "tag": "846bafac57468955",
-      "tls": {
-        "enabled": true,
-        "server_name": "nimm.mpd.cc.cd",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "transport": {
-        "headers": {
-          "Host": "nimm.mpd.cc.cd"
-        },
-        "path": "/0962",
-        "type": "ws"
-      },
-      "type": "trojan"
-    },
-    {
       "flow": "xtls-rprx-vision",
       "server": "87.192.47.10",
       "server_port": 52006,
@@ -14598,27 +14582,6 @@
       },
       "type": "vless",
       "uuid": "e2a4dbed-1353-44ac-b4ff-51dcfdc58dcf"
-    },
-    {
-      "flow": "xtls-rprx-vision",
-      "server": "18.139.227.162",
-      "server_port": 28243,
-      "tag": "a756dc13f18109d6",
-      "tls": {
-        "enabled": true,
-        "reality": {
-          "enabled": true,
-          "public_key": "IXxfPvq2OkbSuA-ZTBFpMzkDU1uO8dEI1e7s9VfHh1Y",
-          "short_id": "7996bf4dcf194d18"
-        },
-        "server_name": "www.cloudflare.com",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        }
-      },
-      "type": "vless",
-      "uuid": "d00d9d18-20cf-4191-be76-6f73d43a27ec"
     },
     {
       "flow": "xtls-rprx-vision",
